@@ -1,10 +1,10 @@
-FBPoL
-=====
+FB Programs of Legend
+=====================
 
 FB Programs of Legend is a Robot Programming Game made for the FBGD 2018-2019 Competition.
 
 FBPoL robots are controled by player programs made in a system that imitates a small subset of the FreeBASIC language.
-These programs are converted to C and compiled in memory by libtcc.  They are then run in their own threads that get a
+These programs are converted to C and compiled in memory by 'libtcc'.  They are then run in their own threads that get a
 game controlled timeslice every frame.
 
 Player Programs suppot 7 FreeBASIC data types:
@@ -16,9 +16,9 @@ Player Programs suppot 7 FreeBASIC data types:
     fb.Image Ptr 'For Graphics Commands
     
     'Arrays (Arrays are 1D, 0 based and Variable Length)
-    Integer
-    Double
-    String
+    Array of Integer
+    Array of Double 
+    Array of String
 
 Player Programs can control their Robots using the 4 KeyWords:
 
@@ -71,7 +71,7 @@ Additionally the Backend supports some functionality from the following FreeBASI
     'Arithmetic
     +
     - (subtract)
-    - (negate
+    - (negate)
     *
     /
     \
