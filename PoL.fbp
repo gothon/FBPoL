@@ -1,0 +1,60 @@
+[Project]
+Version=3
+Description=Programable bots help you do runs through floors!
+Api=fb (FreeBASIC)
+Grouping=2
+AddMainFiles=1
+AddModuleFiles=1
+ResExport=
+CompileIfNewer=0
+IncVersion=0
+RunCmd=0
+[Make]
+Module=Module Build,fbc -c
+Recompile=2
+Current=6
+1=Windows GUI,fbc -s gui
+2=Windows GUI (debug),fbc -g -s gui
+3=Windows GUI (error checking),fbc -g -exx -s gui
+4=Windows GUI (GCC),fbc -s gui -gen gcc -R -Wc -O2
+5=Windows Console,fbc -s console -Wc -O2
+6=Windows Console (debug),fbc -g -exx -s console
+7=Windows Console (debug GCC),fbc -g -exx -s console -gen gcc
+Output=Bin\Win32\FBPoL.exe
+Run=
+Delete=
+[TabOrder]
+TabOrder=0
+[File]
+1=Src\FBPoL.bas
+2=Src\modMenu.bi
+3=
+4=Src\modBASIC.bi
+5=Src\PoL.rc
+6=Src\modGraphics.bi
+7=Src\modGameState.bi
+8=Src\FBPoL.bi
+1001=Src\modTile.bas
+1002=Src\modMenu.bas
+1003=Src\modBASIC.bas
+1004=Src\modGraphics.bas
+1005=Src\modGameState.bas
+1006=Src\modPlayerCode.bas
+[BreakPoint]
+1=
+4=
+8=
+2=
+7=
+1001=
+6=
+1002=
+3=
+1003=
+1004=
+1005=
+1006=
+[FileInfo]
+1=0,95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+2=0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+5=0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
