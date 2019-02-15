@@ -104,6 +104,7 @@ Sub ProgIO.EnQueueInKey(KeyStr As String)
     
     InKeyBuffer(InKeyBufferTop) = KeyStr
     InKeyBufferTop = (InKeyBufferTop + 1) Mod (UBound(InKeyBuffer) + 1)
+    KeyPressSinceSleep = -1
 End Sub
 
 Destructor ProgIO
@@ -669,25 +670,26 @@ Function __Rnd CDecl (IO As ProgIO, NumSeed As Single) As Double
 End Function
 
 Sub __Sleep CDecl (IO As ProgIO, ByVal Ammount As Integer = -1)
+    IO.KeyPressSinceSleep = 0
     If Ammount = -1 Then
         Do
             ThreadFrameDone IO
-        Loop Until IO.InKeyBufferSize > 0
+        Loop Until IO.KeyPressSinceSleep
        Else
         'Ammount += IO.TickTime * 16.66666666
         'Do
         '    ThreadFrameDone IO
-        'Loop Until IO.TickTime * 16.66666666 > Ammount Or IO.InKeyBufferSize > 0
+        'Loop Until IO.TickTime * 16.66666666 > Ammount Or IO.KeyPressSinceSleep
         Do
             Ammount -= 17 'Each frame is 1/60th a simulation second
             ThreadFrameDone IO
-            If Ammount <= 0 Or IO.InKeyBufferSize > 0 Then Exit Do
+            If Ammount <= 0 Or IO.KeyPressSinceSleep Then Exit Do
             Ammount -= 16' + IIf(3*Rnd < 2, 1, 0)
             ThreadFrameDone IO
-            If Ammount <= 0 Or IO.InKeyBufferSize > 0 Then Exit Do
+            If Ammount <= 0 Or IO.KeyPressSinceSleep Then Exit Do
             Ammount -= 17
             ThreadFrameDone IO
-        Loop Until Ammount <= 0 Or IO.InKeyBufferSize > 0
+        Loop Until Ammount <= 0 Or IO.KeyPressSinceSleep
     End If
 End Sub
 

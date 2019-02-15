@@ -89,7 +89,7 @@ Type ProgIO
     
     'Input Stuff
     As String * 3 InKeyBuffer(14)
-    As Integer InKeyBufferSize, InKeyBufferTop
+    As Integer InKeyBufferSize, InKeyBufferTop, KeyPressSinceSleep
     As Const UByte Ptr KeyDown
     As Integer MouseX, MouseY, MouseWheel, MouseButtons
     AS JoyData JoyStick(15)

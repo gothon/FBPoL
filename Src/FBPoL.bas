@@ -749,7 +749,7 @@ Scope
             If DoBasicEvents(Event) Then Exit Do, Do
         Loop
         
-        'Copy GamePad data for GetJoystickArray
+        'Copy GamePad data for GetJoystick
         For J As Integer = 0 To UBound(WS.RunProgIO(0).JoyStick)
             With WS.RunProgIO(0).JoyStick(J)
                 Var I = .GamePadNum

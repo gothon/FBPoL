@@ -294,7 +294,6 @@ Extern CurProc As BASIC_Procedure Ptr
 #Define Add_Param(VarName, VarType) Var VarName = .AddParam(#VarName, VarType)
 #Define _Dim_Shared(VarName, VarType) Var VarName = CurProg->Dim_Shared_(#VarName, VarType)
 
-'#Define LLabel(LineLabel) Var LineLabel = .LLabel_(#LineLabel)
 #Macro LLabel(LINE_LABEL)
     #IfNDef LINE_LABEL
         Dim LINE_LABEL As BASIC_Expression

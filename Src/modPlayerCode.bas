@@ -216,7 +216,7 @@ Sub GenDefPlayerProg
         .If_ ID = 16
             _Cls
             _Print ""
-            _Print "    Keboard Operation Selected"
+            _Print "    Keyboard Operation Selected"
             _Print ""
             _Print " Press"
             _Print "  " & Chr(24) & " " & Chr(25) & " " & Chr(26) & " " & Chr(27) & " to move"
