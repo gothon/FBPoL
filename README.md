@@ -32,7 +32,7 @@ Additionally the Backend supports some functionality from the following FreeBASI
     'Variables And Arrays
     Dim
     Dim Shared
-    = (Assign)
+    = (assign)
     ReDim
     ReDim Preserve
     () 'ArrayAccess
@@ -57,8 +57,8 @@ Additionally the Backend supports some functionality from the following FreeBASI
     Loop
     Loop While ...
     Loop Until ...
-    For ... To ...
-    For ... To ... Step
+    For ... = ... To ...
+    For ... = ... To ... Step ...
     Next
     GOTO ...
     
