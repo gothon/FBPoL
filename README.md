@@ -7,18 +7,18 @@ FBPoL robots are controled by player programs made in a system that imitates a s
 These programs are converted to C and compiled in memory by 'libtcc'.  They are then run in their own threads that get a
 game controlled timeslice every frame.
 
-Player Programs suppot 7 FreeBASIC data types:
+Player programs can use Global, Local, and Parameter variables of 7 FreeBASIC data types:
 
     'Basic Types
     Integer
     Double
-    String
+    String 'Variable Length
     fb.Image Ptr 'For Graphics Commands
     
     'Arrays (Arrays are 1D, 0 based and Variable Length)
     Array of Integer
     Array of Double 
-    Array of String
+    Array of String 'Variable Length
 
 Player Programs can control their Robots using the 4 KeyWords:
 
