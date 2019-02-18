@@ -355,9 +355,9 @@ Operator Log(Number As BASIC_Expression) As BASIC_Expression
     Return BuildOp(OpLog, Number)
 End Operator
 
-Function _Sqr(Number As BASIC_Expression) As BASIC_Expression
+Operator Sqr(Number As BASIC_Expression) As BASIC_Expression
     Return BuildOp(OpSqr, Number)
-End Function
+End Operator
 
 'Player Inputs
 

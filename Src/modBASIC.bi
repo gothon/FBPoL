@@ -349,7 +349,7 @@ Declare Operator Tan(Angle As BASIC_Expression) As BASIC_Expression
 Declare Operator Atn(Number As BASIC_Expression) As BASIC_Expression
 Declare Operator Exp(Number As BASIC_Expression) As BASIC_Expression
 Declare Operator Log(Number As BASIC_Expression) As BASIC_Expression
-Declare Function _Sqr(Number As BASIC_Expression) As BASIC_Expression
+Declare Operator Sqr(Number As BASIC_Expression) As BASIC_Expression
 
 Declare Function _InKey As BASIC_Expression
 Declare Function _MultiKey(ScanCode As BASIC_Expression) As BASIC_Expression
