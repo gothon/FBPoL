@@ -37,4 +37,4 @@
 #Include "Src/modTile.bi"
 
 'How fast do player programs run? (ie how many Ops can they execute per frame)
-#Define THREAD_TIME_SLICE 64 'Good Values Range from 32 to 1024
+#Define THREAD_TIME_SLICE 128 'Good Values Range from 32 to 1024

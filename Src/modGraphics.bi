@@ -34,7 +34,7 @@ Type RenderInfo
     As SDL_Window Ptr Wind, Wind2
     As Any Ptr GlContext
     As GLuint GfxFont, TexTiles, TileColorBuffer, TileDepthBuffer, TileFrameBuffer, TexFrameBuffer
-    As SDL_Rect Bounds = Type(100, 100, 1024, 768)
+    As SDL_Rect Bounds = Type(100, 100, 800, 600)
     As Long MultiSampleAntiAlias = 0, MaxMSAA
     As Integer MonitorNum = -1 '-1 Windowed, -2 Allscreen
     As Integer ShowControllerInput, ShowStatusText, GlShaderExt, SwapInterval = 0

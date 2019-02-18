@@ -238,8 +238,8 @@ Function __MultiKey CDecl (IO As ProgIO, ScanCode As Integer) As Integer
     Case SC_0: Return -IO.KeyDown[SDL_SCANCODE_0] Or -IO.KeyDown[SDL_SCANCODE_KP_0]
     Case SC_MINUS        : Return -IO.KeyDown[SDL_SCANCODE_MINUS]
     Case SC_EQUALS       : Return -IO.KeyDown[SDL_SCANCODE_EQUALS]
-    Case SC_BACKSPACE    : Return -IO.KeyDown[SDL_SCANCODE_KP_BACKSPACE]
-    Case SC_TAB          : Return -IO.KeyDown[SDL_SCANCODE_KP_TAB]
+    Case SC_BACKSPACE    : Return -IO.KeyDown[SDL_SCANCODE_BACKSPACE] 'Or -IO.KeyDown[SDL_SCANCODE_KP_BACKSPACE]
+    Case SC_TAB          : Return -IO.KeyDown[SDL_SCANCODE_TAB] 'Or -IO.KeyDown[SDL_SCANCODE_KP_TAB]
     Case SC_Q            : Return -IO.KeyDown[SDL_SCANCODE_Q]
     Case SC_W            : Return -IO.KeyDown[SDL_SCANCODE_W]
     Case SC_E            : Return -IO.KeyDown[SDL_SCANCODE_E]
@@ -281,7 +281,7 @@ Function __MultiKey CDecl (IO As ProgIO, ScanCode As Integer) As Integer
     Case SC_RSHIFT       : Return -IO.KeyDown[SDL_SCANCODE_RSHIFT]
     Case SC_MULTIPLY     : Return -IO.KeyDown[SDL_SCANCODE_KP_MULTIPLY]
     Case SC_ALT          : Return -IO.KeyDown[SDL_SCANCODE_LALT] Or -IO.KeyDown[SDL_SCANCODE_RALT]
-    Case SC_SPACE        : Return -IO.KeyDown[SDL_SCANCODE_KP_SPACE]
+    Case SC_SPACE        : Return -IO.KeyDown[SDL_SCANCODE_SPACE] 'Or -IO.KeyDown[SDL_SCANCODE_KP_SPACE]
     Case SC_CAPSLOCK     : Return -IO.KeyDown[SDL_SCANCODE_CAPSLOCK]
     Case SC_F1: Return -IO.KeyDown[SDL_SCANCODE_F1]
     Case SC_F2: Return -IO.KeyDown[SDL_SCANCODE_F2]
@@ -818,27 +818,6 @@ Sub MakeDefaultPlayerProg(WS As WorldState)
     'LineNumPrint EmitCHeader & EmitProgC(WS.ProgUnit(0).Code)
     
     WS.ProgUnit(0).Build
-    'WS.ProgUnit(0).Build
-    '
-    'Exit Sub
-    '
-    'ThreadsInit
-    '
-    'WS.RunProgIO(0).RunStart WS.ProgUnit(0)
-    '
-    'ThreadsRun
-    '
-    'WS.RunProgIO(0).EndRun
-    '
-    'ThreadsCleanup
-    '
-    ''If WS.ProgUnit(0).BuildState <> NULL Then tcc_delete WS.ProgUnit(0).BuildState: WS.ProgUnit(0).BuildState = NULL
-    ''WS.ProgUnit(0).Init_Globals = NULL
-    ''WS.ProgUnit(0).EntryPoint = NULL
-    ''WS.ProgUnit(0).Destroy_Globals = NULL
-    ''WS.ProgUnit(0).Destructor
-    '
-    'WS.ProgUnit(0).Build
 End Sub
 
 Sub ThreadsInit
