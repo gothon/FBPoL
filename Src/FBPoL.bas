@@ -71,46 +71,6 @@ Function DoBasicEvents(Event As SDL_Event) As Integer
     Return 0
 End Function
 
-Sub DrawStick(X As Single, Y As Single, Btn As Integer, Trigger As Single = 0)
-    If X ^ 2 + Y ^ 2 > 0.9 Then
-        glColor4ub 255, 0, 255, 255
-       Else
-        If Btn Then
-            glColor4ub 127, 0, 255, 255
-           Else
-            glColor4ub 255, 255, 255, 255
-        End If
-    End If
-    glBegin GL_LINE_LOOP 'GL_POINTS 'GL_LINE_STRIP
-    For T As Single = 0 To 8 * Atn(1) Step 0.05
-        glVertex3i Cos(T) * 50, Sin(T) * 50, 0
-    Next T
-    glEnd
-    Var R = 8689 / 2 ^ 15
-    glBegin GL_LINE_LOOP 'GL_POINTS 'GL_LINE_STRIP
-    For T As Single = 0 To 8 * Atn(1) Step 0.05
-        glVertex3i Cos(T) * 50 * R, Sin(T) * 50 * R, 0
-    Next T
-    glEnd
-    
-    glBegin GL_LINES
-    If Btn Then
-        glColor4ub 127, 0, 255, 255
-       Else
-        glColor4ub 255, 255, 255, 255
-    End If
-    glVertex3i -50, 0, 0
-    glVertex3i 50, 0, 0
-    glVertex3i 0, -50, 0
-    glVertex3i 0, 50, 0
-    glColor4ub 255, 0, 255, 255
-    glVertex3i 0, 0, 0
-    glVertex3i X * 50, Y * 50, 0
-    glVertex3i -40, 40, 0
-    glVertex3i -40, 40 - Trigger * 80, 0
-    glEnd
-End Sub
-
 Function SDL_Keycode_to_InKeyStr(KeyCode As SDL_Keycode, KeyMod As SDL_Keymod) As String
     If KeyCode < 123 Then 'Not using KMOD_ALT or KMOD_CTRL yet
         If KeyMod And KMOD_SHIFT Then 
@@ -249,78 +209,15 @@ Sub Render(RI As RenderInfo, WS As WorldState, GamePad() As SDL_GameController P
     End If
     pSpin = RI.SpinAng
     pTilt = RI.TiltAng
-
-
+    
     ' Clear The Screen
     SetupGl2D RI.Bounds.W, RI.Bounds.H
     glClearColor 0.1f, 0.3f, 0.6f, 1.0f
     'glClearColor 1, 1, 1, 1
     glClear GL_DEPTH_BUFFER_BIT Or GL_COLOR_BUFFER_BIT
     
-    
-    '''''''''''''''''''''''''''''''''''
-    ' Render Controller Inputs
-    glBindTexture GL_TEXTURE_2D, RI.GfxFont
-    'glDisable GL_COLOR_MATERIAL
-    glDisable GL_LIGHTING
-    glDisable GL_DEPTH_TEST
-    glEnable GL_LINE_SMOOTH
-    glLineWidth 4
-    'glPointSize 4
-    glMatrixMode GL_MODELVIEW
-    glLoadIdentity
-    glPushMatrix
-    glTranslatef 0, RI.Bounds.H - 60, 0
-    For I As Integer = 0 To UBound(GamePad)
-        If GamePad(I) <> NULL AndAlso SDL_GameControllerGetAttached(GamePad(I)) Then
-            '#Define XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  7849
-            '#Define XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE 8689
-            '#Define XINPUT_GAMEPAD_TRIGGER_THRESHOLD    30
-            glDisable GL_TEXTURE_2D
-            glTranslatef 60, 0, 0
-            DrawStick SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_LEFTX) / 2 ^ 15, _
-                      SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_LEFTY) / 2 ^ 15, _
-                      SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_LEFTSTICK), _
-                      SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 2 ^ 15
-            glTranslatef 100, 0, 0
-            DrawStick SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_RIGHTX) / 2 ^ 15, _
-                      SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_RIGHTY) / 2 ^ 15, _
-                      SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_RIGHTSTICK), _
-                      SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 2 ^ 15
-            glTranslatef 50, 0, 0
-            
-            glEnable GL_TEXTURE_2D
-            Dim As String BtnText = *SDL_GameControllerName(GamePad(I)) & " (" & (I + 1) & ")" '*SDL_JoystickNameForIndex(I)
-            DrawTextGL BtnText, -200, -84
-            BtnText = ""
-            
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_BACK) Then BtnText &= "BACK "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_LEFTSHOULDER) Then BtnText &= "L " '"LEFTSHOULDER "
-            
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_UP) Then BtnText &= Chr(24) & " " '"DPAD_UP "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_DOWN) Then BtnText &= Chr(25) & " "  '"DPAD_DOWN "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_LEFT) Then BtnText &= Chr(27) & " " '"DPAD_LEFT "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_RIGHT) Then BtnText &= Chr(26) & " " '"DPAD_RIGHT "
-            
-            DrawTextGL BtnText, -200, -74, , RGB(255, 0, 255)
-            BtnText = ""
-            
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_GUIDE) Then BtnText &= "GUIDE "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_START) Then BtnText &= "START "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) Then BtnText &= "R " '"RIGHTSHOULDER "
-            
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_A) Then BtnText &= "A "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_B) Then BtnText &= "B "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_X) Then BtnText &= "X "
-            If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_Y) Then BtnText &= "Y "
-            
-            DrawTextGL BtnText, -200, -64, , RGB(255, 0, 255)
-            glDisable GL_TEXTURE_2D
-        End If
-    Next I
-    glPopMatrix
-    
     ' Tile Map Render
+    glDisable GL_LIGHTING
     SetupGlOrtho3D RI.Bounds.W, RI.Bounds.H
     glMatrixMode GL_MODELVIEW
     glLoadIdentity
@@ -352,24 +249,15 @@ Sub Render(RI As RenderInfo, WS As WorldState, GamePad() As SDL_GameController P
     glBindTexture GL_TEXTURE_2D, RI.GfxFont
     glEnable GL_TEXTURE_2D
     
-    DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
-    DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
+    'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
+    'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
     
-    DrawTextGL " VFPS: " & GFPS, 1, 11, 1, RGB(0, 0, 0)
-    DrawTextGL " VFPS: " & GFPS, 0, 10, 1
+    DrawTextGL " VFPS: " & GFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
+    DrawTextGL " VFPS: " & GFPS, RI.Bounds.W - 80, 10, 1
     
-    DrawTextGL " SFPS: " & SFPS, 1, 31, 1, RGB(0, 0, 0)
-    DrawTextGL " SFPS: " & SFPS, 0, 30, 1
+    DrawTextGL " SFPS: " & SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
+    DrawTextGL " SFPS: " & SFPS, RI.Bounds.W - 80, 30, 1
     
-    Var CountDown = Val(Left(Date, 2)) * 30 + Val(Mid(Date, 4, 2)) + Val(Right(Date, 4)) * 361 - 728839 - 64 ' - 736911 - 64 '- 2018
-    DrawTextGL "T " & CountDown, RI.Bounds.W - 159 + 32, 5, 2, RGB(0, 0, 0)
-    DrawTextGL "T " & CountDown, RI.Bounds.W - 160 + 32, 4, 2
-    
-    DrawTextGL Time, RI.Bounds.W - 159 + 16, 25, 2, RGB(0, 0, 0)
-    DrawTextGL Time, RI.Bounds.W - 160 + 16, 24, 2
-    
-    DrawTextGL Date, RI.Bounds.W - 159, 45, 2, RGB(0, 0, 0)
-    DrawTextGL Date, RI.Bounds.W - 160, 44, 2
     glDisable GL_TEXTURE_2D
     
     ' Render Sprites
@@ -686,6 +574,9 @@ Scope
                 'SDL_GetModState
                 Var K = SDL_Keycode_to_InKeyStr(Event.Key.KeySym.Sym, Event.Key.KeySym.Mod_)
                 If K <> "" Then WS.RunProgIO(0).EnQueueInKey K 'Fill InKey Buffer
+                
+                'If Event.Key.KeySym.Sym = SDLK_LALT Or Event.Key.KeySym.Sym = SDLK_RALT Then
+                'End If
                 
                 Case SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN
                     Dim As Integer W, H, R, WndX, WndY

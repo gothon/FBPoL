@@ -40,7 +40,7 @@ Enum BASIC_Operation
     OpContinueLoop'
     'OpLineLabel
     OpGOTO
-    OpGOSUB 'May or may not implement
+    'OpGOSUB 'Obsolete do not implement
     
     'Procedures
     OpCallSub
