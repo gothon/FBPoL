@@ -48,15 +48,6 @@ Type BuildUnit
     Declare Destructor()
 End Type
 
-'Type ColorText
-'    As String Txt
-'    As ULong Col
-'End Type
-'
-'Type ColorLine
-'    As ColorText Lin(Any)
-'End Type
-
 Type JoyData
     As Integer Btn, Attached, GamePadNum = -1
     As Single Axis(7)

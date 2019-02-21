@@ -811,7 +811,7 @@ Sub MakeDefaultPlayerProg(WS As WorldState)
     'GenPongProg
     GenDefPlayerProg
     
-    ConsolePrint EmitProgFB(WS.ProgUnit(0).Code)
+    'ConsolePrint EmitProgFB(WS.ProgUnit(0).Code)
     
     'ConsolePrint EmitCHeader
     'ConsolePrint EmitProgC(WS.ProgUnit(0).Code)

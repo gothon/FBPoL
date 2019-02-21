@@ -249,6 +249,9 @@ Sub Render(RI As RenderInfo, WS As WorldState, GamePad() As SDL_GameController P
     glBindTexture GL_TEXTURE_2D, RI.GfxFont
     glEnable GL_TEXTURE_2D
     
+    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 1, 1, 1, RGB(0, 0, 0)
+    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 0, 0, 1
+    
     'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
     'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
     
