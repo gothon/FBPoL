@@ -13,6 +13,12 @@ Type FrameTime
     As LongInt FrameT, RendT, SleepT
 End Type
 
+Type UserInterfaceState
+    As Integer SFPS, VFPS 'Simulation/Video Frames Per Second
+    Menu(Any) As SuperMenuWidget
+    GamePad(Any) As SDL_GameController Ptr
+End Type
+
 Function GetAllScreenBounds As SDL_Rect
     Dim As SDL_Rect Bounds, All
     For I As Integer = 0 To SDL_GetNumVideoDisplays - 1
@@ -174,7 +180,7 @@ Function SDL_Keycode_to_InKeyStr(KeyCode As SDL_Keycode, KeyMod As SDL_Keymod) A
     Return ""
 End Function
 
-Sub Render(RI As RenderInfo, WS As WorldState, GamePad() As SDL_GameController Ptr, SFPS As Integer, GFPS As Integer)
+Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
     WS.TickOfLastRender = WS.Tick
     
     'Copy Player Screens To Textures for OpenGL display
@@ -255,11 +261,11 @@ Sub Render(RI As RenderInfo, WS As WorldState, GamePad() As SDL_GameController P
     'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
     'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
     
-    DrawTextGL " VFPS: " & GFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
-    DrawTextGL " VFPS: " & GFPS, RI.Bounds.W - 80, 10, 1
+    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
+    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 80, 10, 1
     
-    DrawTextGL " SFPS: " & SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
-    DrawTextGL " SFPS: " & SFPS, RI.Bounds.W - 80, 30, 1
+    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
+    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 80, 30, 1
     
     glDisable GL_TEXTURE_2D
     
@@ -387,12 +393,11 @@ Scope
         Print ""
     #EndIf
     
-    Dim RI As RenderInfo, WS As WorldState
+    Dim RI As RenderInfo, WS As WorldState, UI As UserInterfaceState
     
     'Initialize SDL
     If SDL_Init(SDL_INIT_VIDEO Or SDL_INIT_TIMER Or SDL_INIT_GAMECONTROLLER Or SDL_INIT_HAPTIC) <> 0 Then End 1
     
-    Dim As SDL_GameController Ptr GamePad()
     Dim As SDL_Joystick Ptr JoyStick()
     If SDL_NumJoysticks > 0 Then 'Enable Joysticks
         SDL_JoystickEventState SDL_ENABLE
@@ -501,7 +506,7 @@ Scope
         WS.RunProgIO(0).JoyStick(I).GamePadNum = I
     Next I
     
-    Dim As LongInt SFrames, GFrames, SFPS, GFPS, pTI, TI, RollOverCount
+    Dim As LongInt SFrames, GFrames, pTI, TI, RollOverCount
     Dim As LongInt LastFrame, RT, RunSleepT, RunRendT
     Dim As FrameTime FrameHist(119) '120 Frames (2 Secs) of History
     
@@ -521,8 +526,8 @@ Scope
         SFrames += 1
         If WS.Tick = WS.TickOfLastRender Then GFrames += 1
         If FrameHist(TI).FrameT - LastFrame >= 1000 Then
-            SFPS = SFrames
-            GFPS = GFrames
+            UI.SFPS = SFrames
+            UI.VFPS = GFrames
             LastFrame = FrameHist(TI).FrameT
             SFrames = 0
             GFrames = 0
@@ -624,19 +629,19 @@ Scope
             Case SDL_CONTROLLERDEVICEADDED
                 ConsolePrint "Controller Device Added " & Event.cdevice.which
                 Var TmpPad = SDL_GameControllerOpen(Event.cdevice.which)
-                For I As Integer = 0 To UBound(GamePad)
-                    If GamePad(I) = NULL Then GamePad(I) = TmpPad: TmpPad = NULL: Exit For
+                For I As Integer = 0 To UBound(UI.GamePad)
+                    If UI.GamePad(I) = NULL Then UI.GamePad(I) = TmpPad: TmpPad = NULL: Exit For
                 Next I
                 If TmpPad <> NULL Then
-                    ReDim Preserve GamePad(UBound(GamePad) + 1)
-                    GamePad(UBound(GamePad)) = TmpPad
+                    ReDim Preserve UI.GamePad(UBound(UI.GamePad) + 1)
+                    UI.GamePad(UBound(UI.GamePad)) = TmpPad
                 End If
             Case SDL_CONTROLLERDEVICEREMOVED
                 ConsolePrint "Controller Device Removed " & Event.cdevice.which ' Useless Value
-                For I As Integer = 0 To UBound(GamePad)
-                    If SDL_GameControllerGetAttached(GamePad(I)) = SDL_FALSE Then
-                        SDL_GameControllerClose GamePad(I)
-                        GamePad(I) = NULL
+                For I As Integer = 0 To UBound(UI.GamePad)
+                    If SDL_GameControllerGetAttached(UI.GamePad(I)) = SDL_FALSE Then
+                        SDL_GameControllerClose UI.GamePad(I)
+                        UI.GamePad(I) = NULL
                     End If
                 Next I
             End Select
@@ -647,35 +652,35 @@ Scope
         For J As Integer = 0 To UBound(WS.RunProgIO(0).JoyStick)
             With WS.RunProgIO(0).JoyStick(J)
                 Var I = .GamePadNum
-                If I >= 0 AndAlso I <= UBound(GamePad) AndAlso GamePad(I) <> NULL AndAlso SDL_GameControllerGetAttached(GamePad(I)) Then
+                If I >= 0 AndAlso I <= UBound(UI.GamePad) AndAlso UI.GamePad(I) <> NULL AndAlso SDL_GameControllerGetAttached(UI.GamePad(I)) Then
                     .Attached = -1
                     .Btn = 0
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_A) Then .Btn Or= 1
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_B) Then .Btn Or= 2
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_X) Then .Btn Or= 4
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_Y) Then .Btn Or= 8
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_A) Then .Btn Or= 1
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_B) Then .Btn Or= 2
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_X) Then .Btn Or= 4
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_Y) Then .Btn Or= 8
                     
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_LEFTSHOULDER) Then .Btn Or= &H10
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) Then .Btn Or= &H20
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_BACK) Then .Btn Or= &H40
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_START) Then .Btn Or= &H80
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_LEFTSHOULDER) Then .Btn Or= &H10
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) Then .Btn Or= &H20
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_BACK) Then .Btn Or= &H40
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_START) Then .Btn Or= &H80
                     
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_LEFTSTICK) Then .Btn Or= &H100
-                    If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_RIGHTSTICK) Then .Btn Or= &H200
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_LEFTSTICK) Then .Btn Or= &H100
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_RIGHTSTICK) Then .Btn Or= &H200
                     'If SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_GUIDE) Then .Btn Or= &H400
                     
-                    .Axis(0) = SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_LEFTX) / 2 ^ 15
-                    .Axis(1) = SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_LEFTY) / 2 ^ 15
+                    .Axis(0) = SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_LEFTX) / 2 ^ 15
+                    .Axis(1) = SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_LEFTY) / 2 ^ 15
                     
-                    .Axis(2) = (SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_TRIGGERLEFT) - SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_TRIGGERRIGHT)) / 2 ^ 15
+                    .Axis(2) = (SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_TRIGGERLEFT) - SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_TRIGGERRIGHT)) / 2 ^ 15
                     
-                    .Axis(3) = SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_RIGHTY) / 2 ^ 15
-                    .Axis(4) = SDL_GameControllerGetAxis(GamePad(I), SDL_CONTROLLER_AXIS_RIGHTX) / 2 ^ 15
+                    .Axis(3) = SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_RIGHTY) / 2 ^ 15
+                    .Axis(4) = SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_RIGHTX) / 2 ^ 15
                     
                     .Axis(5) = -1000
                     
-                    .Axis(6) = SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_RIGHT) - SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_LEFT)
-                    .Axis(7) = SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_DOWN) - SDL_GameControllerGetButton(GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_UP)
+                    .Axis(6) = SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_RIGHT) - SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+                    .Axis(7) = SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_DOWN) - SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_UP)
                    Else
                     .Attached = 0
                 End If
@@ -746,7 +751,7 @@ Scope
         RT = 0
         If FrameHist(TI).FrameT - FrameHist(pTI).FrameT - RunSleepT < 200 Then
             RT = SDL_GetTicks
-            Render RI, WS, GamePad(), SFPS, GFPS
+            Render RI, WS, UI
             RT = SDL_GetTicks - RT
             
             Dim As LongInt XtraT = FrameHist(pTI).FrameT + 200 - SDL_GetTicks
@@ -762,7 +767,7 @@ Scope
             If WS.Tick > WS.TickOfLastRender + 2 Or SDL_GetTicks - FrameHist(pTI).FrameT < 200 - RunRendT / 12 Then
                 RT = SDL_GetTicks
                 'glFlush
-                Render RI, WS, GamePad(), SFPS, GFPS
+                Render RI, WS, UI
                 RT = SDL_GetTicks - RT
             End If
         End If
@@ -775,13 +780,10 @@ Scope
     
     'Cleanup
     Erase WS.RunProgIO
-    'For I As Integer = 0 To UBound(WS.ProgUnit)
-    '    If WS.ProgUnit(I).BuildState <> NULL Then tcc_delete WS.ProgUnit(I).BuildState: WS.ProgUnit(I).BuildState = NULL
-    'Next I
     Erase WS.ProgUnit
     ThreadsCleanup
-    For I As Integer = 0 To UBound(GamePad)
-        If GamePad(I) <> NULL Then SDL_GameControllerClose GamePad(I)
+    For I As Integer = 0 To UBound(UI.GamePad)
+        If UI.GamePad(I) <> NULL Then SDL_GameControllerClose UI.GamePad(I)
     Next I
     GraphicsCleanup RI
     If RI.Wind2 <> NULL Then SDL_DestroyWindow RI.Wind2: RI.Wind2 = NULL
