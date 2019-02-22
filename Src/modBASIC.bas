@@ -1105,7 +1105,7 @@ Function EmitLineFB(CodeLine As BASIC_LineOfCodeAst) As String
     
     Code &= EmitTopExprFB(Type(Operation, UBound(CodeLine.Tree)), CodeLine)
     
-    Return Code & CodeLine.CommentStr & !"\n"
+    Return Code & CodeLine.CommentStr
 End Function
 
 Function EmitProgFB(Prog As BASIC_Program) As String
@@ -1132,7 +1132,7 @@ Function EmitProgFB(Prog As BASIC_Program) As String
         If Prog.Proc(I).ReturnType <> VtVOID Then Code &= " As " & TypeNameFB(Prog.Proc(I).ReturnType)
         Code &= !"\n"
         For J As Integer = 0 To UBound(Prog.Proc(I).Lines)
-            Code &= CodeIndent(Prog.Proc(I).Lines(J)) & EmitLineFB(Prog.Proc(I).Lines(J))
+            Code &= CodeIndent(Prog.Proc(I).Lines(J)) & EmitLineFB(Prog.Proc(I).Lines(J)) & !"\n"
         Next J
         Code &= IIf(Prog.Proc(I).ReturnType = VtVOID, "End Sub", "End Function") & !"\n"
         If I < UBound(Prog.Proc) Then Code &= !"\n"

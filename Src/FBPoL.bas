@@ -19,6 +19,10 @@ Type UserInterfaceState
     GamePad(Any) As SDL_GameController Ptr
 End Type
 
+Function LeftPad (St As String, Length As Integer, Ch As String) As String
+    Return String(Length - Len(St), Ch) & St '#Inclib https://registry.npmjs.org/left-pad
+End Function
+
 Function GetAllScreenBounds As SDL_Rect
     Dim As SDL_Rect Bounds, All
     For I As Integer = 0 To SDL_GetNumVideoDisplays - 1
@@ -270,10 +274,8 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
     glBindTexture GL_TEXTURE_2D, RI.GfxFont
     glEnable GL_TEXTURE_2D
     
-    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 1, 1, 1, RGB(0, 0, 0)
-    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 0, 0, 1
     For I As Integer = 0 To UBound(UI.Menu)
-        UI.Menu(I).Render 0, 0, RI.Bounds.W, RI.Bounds.H, 0
+        UI.Menu(I).Render
     Next I
     
     'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
@@ -522,6 +524,37 @@ Scope
     WS.RunProgIO(0).RunStart WS.ProgUnit(0)
     ThreadsRun
     'WS.RunProgIO(0).EndRun
+    
+    'Init Menu
+    ReDim UI.Menu(1)
+    UI.Menu(0).X = 10
+    UI.Menu(0).Y = 10
+    UI.Menu(0).W = RI.Bounds.W - 100
+    UI.Menu(0).H = 20
+    UI.Menu(0).Sel = 1
+    UI.Menu(0).TitleText.Text = "Choose Procedure"
+    ReDim (UI.Menu(0).OptionText)(UBound(WS.ProgUnit(0).Code.Proc))
+    For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc)
+        ReDim (UI.Menu(0).OptionText(I).LineTxt)(0)
+        If WS.ProgUnit(0).Code.Proc(I).ReturnType = VtVOID Then
+            UI.Menu(0).OptionText(I).LineTxt(0).Text = "Sub "
+           Else
+            UI.Menu(0).OptionText(I).LineTxt(0).Text = "Function "
+        End If
+        UI.Menu(0).OptionText(I).LineTxt(0).Text &= WS.ProgUnit(0).Code.Proc(I).ProcName
+    Next I
+    
+    UI.Menu(1).X = 10
+    UI.Menu(1).Y = 40
+    UI.Menu(1).W = RI.Bounds.W - 100
+    UI.Menu(1).H = RI.Bounds.H - 70
+    UI.Menu(1).Sel = 0
+    ReDim (UI.Menu(1).OptionText)(UBound(WS.ProgUnit(0).Code.Proc(1).Lines))
+    For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc(1).Lines)
+        ReDim (UI.Menu(1).OptionText(I).LineTxt)(0)
+        Var CodeLine = @WS.ProgUnit(0).Code.Proc(1).Lines(I)
+        UI.Menu(1).OptionText(I).LineTxt(0).Text = LeftPad(Str(I + 1), 3, " ") & " " & Space(4 * CodeLine->IndentDepth) & EmitLineFB(*CodeLine)
+    Next I
     
     ' Message Loop
     Do

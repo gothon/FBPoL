@@ -22,12 +22,13 @@ End Type
 
 Type SuperMenuWidget
     Index As Integer
-    As Integer X, Y, Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0
+    As Integer X, Y, W, H, TopLine
+    As Integer Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0
     TitleText As FormattedText
     OptionText(Any) As FormattedLine
     
     Declare Sub SetText(Text As String)
-    Declare Sub Render(X As Integer = 0, Y As Integer = 0, W As Integer = 0, H As Integer = 0, StartLine As Integer = 0)
+    Declare Sub Render()
 End Type
 
 Type GUI_State
