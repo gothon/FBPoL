@@ -791,7 +791,10 @@ Sub BuildUnit.Build
 End Sub
 
 Destructor BuildUnit
-    If BuildState <> NULL Then tcc_delete BuildState: BuildState = NULL
+    'Calling tcc_delete causes an unusual crash on exit and sometimes the message:
+    'Aborting due to runtime error 12 ("segmentation violation" signal) in D:\Dev\FreeBasic\PoL\Src\modBASIC.bi::()
+    
+    'If BuildState <> NULL Then tcc_delete BuildState: BuildState = NULL
     Init_Globals = NULL
     EntryPoint = NULL
     Destroy_Globals = NULL
