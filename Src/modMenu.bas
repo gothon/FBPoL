@@ -19,8 +19,8 @@ Sub SuperMenuWidget.Render(X As Integer = 0, Y As Integer = 0, W As Integer = 0,
         If 8 * I > H Then Exit For
         
         For J As Integer = 0 To UBound(OptionText(I).LineTxt)
-            DrawTextGL OptionText(I).LineTxt(J).Text, 1, 8 * I + 1, 0, RGB(0, 0, 0)
-            DrawTextGL OptionText(I).LineTxt(J).Text, 0, 8 * I, 0
+            DrawTextGL OptionText(I).LineTxt(J).Text, 1, 8 * I + 1, 1, RGB(0, 0, 0)
+            DrawTextGL OptionText(I).LineTxt(J).Text, 0, 8 * I, 1
         Next J
     Next I
     

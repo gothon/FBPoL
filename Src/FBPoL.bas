@@ -217,9 +217,7 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
     pTilt = RI.TiltAng
     
     ' Clear The Screen
-    SetupGl2D RI.Bounds.W, RI.Bounds.H
     glClearColor 0.1f, 0.3f, 0.6f, 1.0f
-    'glClearColor 1, 1, 1, 1
     glClear GL_DEPTH_BUFFER_BIT Or GL_COLOR_BUFFER_BIT
     
     ' Tile Map Render
@@ -231,43 +229,6 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
     glScalef RI.TileScale, RI.TileScale, RI.TileScale
     RenderTileMap RI, WS, RI.TileMapLowBound, RI.TileMapLowBound + RI.TileMapSizeBound
     SetupGl2D RI.Bounds.W, RI.Bounds.H
-    
-    '' Render the Tile Texture
-    'glMatrixMode GL_MODELVIEW
-    'glLoadIdentity
-    'glBindTexture GL_TEXTURE_2D, RI.TexTiles
-    'glEnable GL_TEXTURE_2D
-    ''glBlendFunc GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-    'glEnable GL_BLEND
-    'glColor4ub 255, 255, 255, 255
-    'glBegin GL_QUADS
-    'glTexCoord2f 0, 1: glVertex3i 0, 0, 0 '-100
-    'glTexCoord2f 0, 0: glVertex3i 0, 2*128, 0 '-100
-    'glTexCoord2f 1, 0: glVertex3i 2*512, 2*128, 0 '-100
-    'glTexCoord2f 1, 1: glVertex3i 2*512, 0, 0 '-100
-    'glEnd
-    'glDisable GL_TEXTURE_2D
-    
-    ' Render Title Text
-    glMatrixMode GL_MODELVIEW
-    glLoadIdentity
-    glDisable GL_DEPTH_TEST
-    glBindTexture GL_TEXTURE_2D, RI.GfxFont
-    glEnable GL_TEXTURE_2D
-    
-    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 1, 1, 1, RGB(0, 0, 0)
-    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 0, 0, 1
-    
-    'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
-    'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
-    
-    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
-    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 80, 10, 1
-    
-    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
-    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 80, 30, 1
-    
-    glDisable GL_TEXTURE_2D
     
     ' Render Sprites
     glEnable GL_NORMALIZE
@@ -299,6 +260,50 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
     glDisable GL_CULL_FACE
     glDisable GL_ALPHA_TEST
     glDisable GL_DEPTH_TEST
+    
+    ' Render Game Text
+    glDisable GL_LIGHTING
+    glDisable GL_DEPTH_TEST
+    SetupGl2D RI.Bounds.W, RI.Bounds.H
+    glMatrixMode GL_MODELVIEW
+    glLoadIdentity
+    glBindTexture GL_TEXTURE_2D, RI.GfxFont
+    glEnable GL_TEXTURE_2D
+    
+    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 1, 1, 1, RGB(0, 0, 0)
+    DrawTextGL EmitProgFB(WS.ProgUnit(0).Code), 0, 0, 1
+    For I As Integer = 0 To UBound(UI.Menu)
+        UI.Menu(I).Render 0, 0, RI.Bounds.W, RI.Bounds.H, 0
+    Next I
+    
+    'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
+    'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
+    
+    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
+    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 80, 10, 1
+    
+    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
+    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 80, 30, 1
+    
+    glDisable GL_TEXTURE_2D
+    
+    '' Render the Tile Texture
+    'glDisable GL_LIGHTING
+    'glMatrixMode GL_MODELVIEW
+    'SetupGl2D RI.Bounds.W, RI.Bounds.H
+    'glLoadIdentity
+    'glBindTexture GL_TEXTURE_2D, RI.TexTiles
+    'glEnable GL_TEXTURE_2D
+    ''glBlendFunc GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+    'glEnable GL_BLEND
+    'glColor4ub 255, 255, 255, 255
+    'glBegin GL_QUADS
+    'glTexCoord2f 0, 1: glVertex3i 0, 0, 0
+    'glTexCoord2f 0, 0: glVertex3i 0, 2*128, 0
+    'glTexCoord2f 1, 0: glVertex3i 2*512, 2*128, 0
+    'glTexCoord2f 1, 1: glVertex3i 2*512, 0, 0
+    'glEnd
+    'glDisable GL_TEXTURE_2D
     
     Scope 'Render Player Screen
         Dim As Integer W, H, R, WndX, WndY
