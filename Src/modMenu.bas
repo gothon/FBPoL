@@ -17,7 +17,7 @@ Sub SuperMenuWidget.Render()
     glDisable GL_TEXTURE_2D
     glEnable GL_BLEND
     glBlendFunc GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-    glColor4ub 255, 255, 255, 220 '196 '
+    glColor4ub ULng_2_UBx3(BackCol), 220 '196 '
     glBegin GL_QUADS
     glVertex3i 0, 0, 0
     glVertex3i W, 0, 0
@@ -25,7 +25,7 @@ Sub SuperMenuWidget.Render()
     glVertex3i 0, H, 0
     glEnd
     glDisable GL_BLEND
-    glColor4ub 128, 128, 128, 255
+    glColor4ub ULng_2_UBx3(BoarderCol), 255
     DrawRect 0, 0, W - 1, H - 1
     glEnable GL_TEXTURE_2D
     
@@ -37,8 +37,8 @@ Sub SuperMenuWidget.Render()
         
         If Sel = I Then
             glDisable GL_TEXTURE_2D
-            'glColor4ub 64 + 128 * T, 64 + 128 * T, 200 + 55 * T, 255
-            glColor4ub 200, 64 + 128 * T, 64 + 128 * T, 255
+            Var Col = IIf(T, SelBoxCol, Not SelBoxCol)
+            glColor4ub ULng_2_UBx3(Col), 255
             DrawRect 0, 9 * I, 8 * Len(*Txt), 9 * I + 9
             glEnable GL_TEXTURE_2D
         End If

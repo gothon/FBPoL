@@ -550,10 +550,16 @@ Scope
     UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).LineTxt(0).Text = "New Sub or New Function"
     
     UI.Menu(1).X = 10
-    UI.Menu(1).Y = 50
+    UI.Menu(1).Y = 47
     UI.Menu(1).W = RI.Bounds.W - 100
     UI.Menu(1).H = RI.Bounds.H - 70
     UI.Menu(1).Sel = 0
+    UI.Menu(1).SelBoxCol = RGB(200, 64, 64)
+    ReDim (UI.Menu(1).TextStyles)(4)
+    UI.Menu(1).TextStyles(0).Col = RGB(0, 0, 0)
+    UI.Menu(1).TextStyles(1).Col = RGB(0, 0, 128)
+    UI.Menu(1).TextStyles(2).Col = RGB(128, 0, 128)
+    UI.Menu(1).TextStyles(3).Col = RGB(0, 128, 0)
     ReDim (UI.Menu(1).OptionText)(UBound(WS.ProgUnit(0).Code.Proc(1).Lines))
     Var LenLineNums = Len(Str(UBound(WS.ProgUnit(0).Code.Proc(1).Lines) + 1))
     For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc(1).Lines)

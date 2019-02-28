@@ -179,7 +179,7 @@ Sub DrawTextGL(Text As String, X As Integer = 0, Y As Integer = 0, Size As Integ
     
     glMatrixMode GL_MODELVIEW
     glPushMatrix
-    glColor4ub Col Shr 16, (Col Shr 8) And 255, Col And 255, 255
+    glColor4ub ULng_2_UBx3(Col), 255
     glTranslatef X, Y, 0
     glScalef Size, Size, 1
     

@@ -191,7 +191,7 @@ End Enum
 
 Type BASIC_Expression
     As BASIC_ExpressionType ExprType
-    As Integer Index
+    As Integer Index, CodeStart, CodeLen
     
     Declare Constructor()
     Declare Constructor(ExprType As BASIC_ExpressionType, Index As Integer)
@@ -218,7 +218,7 @@ End Type
 Type BASIC_LineOfCodeAst
     As BASIC_Variable ConstantLiterals(Any)
     As BASIC_OperationNode Tree(Any)
-    As String LineLabel, CommentStr
+    As String LineLabel, CommentStr, CodeStr
     
     As Integer NextNode, NextLit, IndentDepth
 End Type
@@ -408,6 +408,7 @@ Declare Function __Sqr CDecl (Number As Double) As Double
 
 ' Front End Code Generator for Screen Display
 Declare Function EmitExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
+Declare Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
 Declare Function EmitLineFB(CodeLine As BASIC_LineOfCodeAst) As String
 Declare Function EmitProgFB(Prog As BASIC_Program) As String
 

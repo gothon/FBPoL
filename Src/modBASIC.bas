@@ -75,6 +75,7 @@ Sub BuildTopLvlOp(Op As BASIC_Operation, Param1 As BASIC_Expression = Type(Empty
                 .Params(8).Index = Param9.Index
             End If
         End With
+        .CodeStr = EmitTopExprFB(Type(Operation, UBound(.Tree)), CurProc->Lines(CurProc->NextLine))
     End With
     With *CurProc
         .NextLine += 1
@@ -845,6 +846,14 @@ Function IsConstNull(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) 
     Return -1
 End Function
 
+Function IsConstNum(V As Double, Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As Integer
+    If Expr.ExprType <> ConstantLiteral Then Return 0
+    If (CodeLine.ConstantLiterals(Expr.Index).VarType And &HFF) <> VtInteger And _
+       (CodeLine.ConstantLiterals(Expr.Index).VarType And &HFF) <> VtDouble Then Return 0
+    If Val(CodeLine.ConstantLiterals(Expr.Index).VarName) <> V Then Return 0
+    Return -1
+End Function
+
 ''''''''''''''''''''''
 ' FB Display Backend '
 ''''''''''''''''''''''
@@ -885,6 +894,13 @@ Function VarNameFromExpr(Expr As BASIC_Expression) As String
     Case GlobalVariable: Return CurProg->GlobalVars(Expr.Index).VarName
     Case Else: Return "/'Error Expression Not A Variable'/"
     End Select
+End Function
+
+Function GenExprFB(Lhs As String, Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
+    Var Code = EmitExprFB(Expr, CodeLine)
+    Expr.CodeStart = Len(Lhs)
+    Expr.CodeLen = Len(Code)
+    Return Lhs & Code
 End Function
 
 Function EmitExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
@@ -1086,7 +1102,12 @@ Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst
     Case OpScreenRes: Return "ScreenRes " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", 32"
     Case OpImageDestroy: Return "ImageDestroy " & EmitExprC(.Params(0), CodeLine)
     'Console
-    Case OpLocate: Return "Locate " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine)
+    Case OpLocate
+        If IsConstNum(-1, .Params(2), CodeLine) Then
+            Return "Locate " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine)
+           Else
+            Return "Locate " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine)
+        End If
     Case OpPrint: Return "Print " & EmitExprFB(.Params(0), CodeLine) & IIf(Val(CodeLine.ConstantLiterals(.Params(1).Index).VarName) = 0, "", ";")
     'MISC
     Case OpRandomize: Return "Randomize " & EmitExprFB(.Params(0), CodeLine)
@@ -1103,9 +1124,9 @@ Function EmitLineFB(CodeLine As BASIC_LineOfCodeAst) As String
     
     If UBound(CodeLine.Tree) < 0 Then Return Code & CodeLine.CommentStr & !"\n"
     
-    Code &= EmitTopExprFB(Type(Operation, UBound(CodeLine.Tree)), CodeLine)
+    'CodeLine.CodeStr = EmitTopExprFB(Type(Operation, UBound(CodeLine.Tree)), CodeLine)
     
-    Return Code & CodeLine.CommentStr
+    Return Code & CodeLine.CodeStr & CodeLine.CommentStr
 End Function
 
 Function EmitProgFB(Prog As BASIC_Program) As String

@@ -43,6 +43,8 @@ Type RenderInfo
     As Single TiltAng, SpinAng, TileScale = 1.7
 End Type
 
+#Define ULng_2_UBx3(C) (C) Shr 16, ((C) Shr 8) And 255, (C) And 255
+
 Declare Sub ConsolePrint(S As Const String)
 Declare Sub LineNumPrint(S As Const String)
 Declare Sub FBImageToTexture(Im As Any Ptr, ByRef TexName As GLuint)

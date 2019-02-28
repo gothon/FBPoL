@@ -28,8 +28,8 @@ End Type
 Type SuperMenuWidget
     Index As Integer
     As Integer X, Y, W, H, TopLine
-    As ULong BackCol, BoarderCol, SelBoxCol
-    As Integer Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0, Horizontal = 0, Enabled = -1
+    As ULong BackCol = RGB(255, 255, 255), BoarderCol = RGB(128, 128, 128), SelBoxCol = RGB(200, 64, 64)
+    As Integer Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0, Horizontal = 0, Enabled = -1, ParentIdx = -1
     TextStyles(Any) As TextFormat
     'TitleText As FormattedText
     OptionText(Any) As FormattedLine
