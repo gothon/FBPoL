@@ -19,9 +19,15 @@ Type UserInterfaceState
     GamePad(Any) As SDL_GameController Ptr
 End Type
 
+'#Inclib https://registry.npmjs.org/left-pad
+'https://xkcd.com/2102/
+'https://www.davidhaney.io/npm-left-pad-have-we-forgotten-how-to-program/
 Function LeftPad (St As String, Length As Integer, Ch As String) As String
-    Return String(Length - Len(St), Ch) & St '#Inclib https://registry.npmjs.org/left-pad
+    Return String(Length - Len(St), Ch) & St
 End Function
+'I hope I don't forget how to program :P
+' zlib depencency, no PNG files loaded or saved
+' SDL2_mixer dependency, no sound effects or music (yet!)
 
 Function GetAllScreenBounds As SDL_Rect
     Dim As SDL_Rect Bounds, All

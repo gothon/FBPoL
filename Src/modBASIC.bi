@@ -150,9 +150,6 @@ Enum BASIC_Operation
     OpSleep
     OpBeep'
     
-    'Apparently Popular
-    OpLeftPad 'Lets hope we don't forget how to program :P
-    
     OpLastOperation
 End Enum
 

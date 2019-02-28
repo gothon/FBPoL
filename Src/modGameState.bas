@@ -693,11 +693,6 @@ Sub __Sleep CDecl (IO As ProgIO, ByVal Ammount As Integer = -1)
     End If
 End Sub
 
-Function __LeftPad CDecl (StTemp As String, Length As Integer, Ch As String) As String
-    Var St = StTemp '#Inclib https://registry.npmjs.org/left-pad
-    Return String(Length - Len(St), Ch) & St
-End Function
-
 Sub AddSymbols(State As TCCState Ptr)
     tcc_add_symbol State, "IntDiv", @IntDiv
     tcc_add_symbol State, "Pow", @Pow
@@ -766,8 +761,6 @@ Sub AddSymbols(State As TCCState Ptr)
     tcc_add_symbol State, "Randomize", @__Randomize
     tcc_add_symbol State, "Rnd", @__Rnd
     tcc_add_symbol State, "Sleep", @__Sleep
-    
-    tcc_add_symbol State, "LeftPad", @__LeftPad
     
     tcc_add_symbol State, "ThreadFrameDone", @ThreadFrameDone
     'tcc_add_symbol State, "IO", @RunProgIO(I)

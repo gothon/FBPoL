@@ -990,8 +990,6 @@ Function EmitExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) A
         Case OpRGB: Return "RGB(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")"
         Case OpTimer: Return "Timer"
         Case OpRnd: Return "Rnd(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        'Apparently Popular
-        Case OpLeftPad: Return "LeftPad(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")"
         End Select
         End With
     End Select
@@ -1258,8 +1256,6 @@ Function EmitCHeader As String
            !"double Rnd(void* io, float seed);\n" _
            !"void Sleep(void* io, FBInteger Ammount);\n" _
            !"\n" _
-           !"FBString* LeftPad(FBString* str, FBInteger len, FBString* ch);\n" _
-           !"\n" _
            !"void ThreadFrameDone(void* io);\n" _
            !"\n"
 End Function
@@ -1392,8 +1388,6 @@ Function EmitExprC(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As
         Case OpRGB: Return "RGB(" & EmitExprListC(.Params(), CodeLine) & ")"
         Case OpTimer: Return "Timer(io)"
         Case OpRnd: Return "Rnd(io, " & EmitExprC(.Params(0), CodeLine) & ")"
-        'Apparently Popular
-        Case OpLeftPad: Return "*LeftPad(" & EmitExprListC(.Params(), CodeLine) & ")"
         Case Else: Return "/*UnknownOp*/"
         End Select
         End With
