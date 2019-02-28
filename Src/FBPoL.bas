@@ -22,7 +22,7 @@ End Type
 '#Inclib https://registry.npmjs.org/left-pad
 'https://xkcd.com/2102/
 'https://www.davidhaney.io/npm-left-pad-have-we-forgotten-how-to-program/
-Function LeftPad (St As String, Length As Integer, Ch As String) As String
+Function LeftPad (St As String, Length As Integer, Ch As String = " ") As String
     Return String(Length - Len(St), Ch) & St
 End Function
 'I hope I don't forget how to program :P
@@ -571,7 +571,7 @@ Scope
     For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc(1).Lines)
         ReDim (UI.Menu(1).OptionText(I).LineTxt)(0)
         Var CodeLine = @WS.ProgUnit(0).Code.Proc(1).Lines(I)
-        UI.Menu(1).OptionText(I).LineTxt(0).Text = LeftPad(Str(I + 1), LenLineNums, " ") & " " & Space(4 * CodeLine->IndentDepth) & EmitLineFB(*CodeLine)
+        UI.Menu(1).OptionText(I).LineTxt(0).Text = LeftPad(Str(I + 1), LenLineNums) & " " & Space(4 * CodeLine->IndentDepth) & EmitLineFB(*CodeLine)
     Next I
     
     ' Message Loop

@@ -75,7 +75,7 @@ Sub BuildTopLvlOp(Op As BASIC_Operation, Param1 As BASIC_Expression = Type(Empty
                 .Params(8).Index = Param9.Index
             End If
         End With
-        .CodeStr = EmitTopExprFB(Type(Operation, UBound(.Tree)), CurProc->Lines(CurProc->NextLine))
+        '.CodeStr = EmitTopExprFB(Type(Operation, UBound(.Tree)), CurProc->Lines(CurProc->NextLine)) 'Foward Refrencing Issue with GOTO statement
     End With
     With *CurProc
         .NextLine += 1
@@ -896,8 +896,15 @@ Function VarNameFromExpr(Expr As BASIC_Expression) As String
     End Select
 End Function
 
-Function GenExprFB(Lhs As String, Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
+Function GenExprFB(Lhs As String = "", Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
     Var Code = EmitExprFB(Expr, CodeLine)
+    Expr.CodeStart = Len(Lhs)
+    Expr.CodeLen = Len(Code)
+    Return Lhs & Code
+End Function
+
+Function GenTopExprFB(Lhs As String, Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
+    Var Code = EmitTopExprFB(Expr, CodeLine)
     Expr.CodeStart = Len(Lhs)
     Expr.CodeLen = Len(Code)
     Return Lhs & Code
@@ -920,76 +927,77 @@ Function EmitExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) A
         With CodeLine.Tree(Expr.Index)
         Select Case As Const .OpType
         'Variables and Arrays
-        Case OpArrayAccess: Return VarNameFromExpr(.Params(0)) & "(" & EmitExprFB(.Params(1), CodeLine) & ")"
+        Case OpArrayAccess: Return GenExprFB(VarNameFromExpr(.Params(0)) & "(", .Params(1), CodeLine) & ")"
         Case OpUBound: Return "UBound(" & VarNameFromExpr(.Params(0)) & ")"
         'Flow Control
-        Case OpAndAlso: Return "(" & EmitExprFB(.Params(0), CodeLine) & " AndAlso " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpOrElse: Return "(" & EmitExprFB(.Params(0), CodeLine) & " OrElse " & EmitExprFB(.Params(1), CodeLine) & ")"
+        Case OpAndAlso: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " AndAlso ", .Params(1), CodeLine) & ")"
+        Case OpOrElse: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " OrElse ", .Params(1), CodeLine) & ")"
         'Procedures
         Case OpCallFunction
-            Var Code = EmitExprFB(.Params(0), CodeLine) & "("
+            Var Code = GenExprFB(, .Params(0), CodeLine) & "("
             For I As Integer = 1 To UBound(.Params) - 1
-                Code &= EmitExprFB(.Params(I), CodeLine) & ", "
+                Code = GenExprFB(Code, .Params(I), CodeLine) & ", "
             Next I
-            If UBound(.Params) >= 1 Then Code &= EmitExprFB(.Params(UBound(.Params)), CodeLine)
+            If UBound(.Params) >= 1 Then Code = GenExprFB(Code, .Params(UBound(.Params)), CodeLine)
             Return Code & ")"
         'Arithmetic
-        Case OpAdd: Return "(" & EmitExprFB(.Params(0), CodeLine) & " + " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpSub: Return "(" & EmitExprFB(.Params(0), CodeLine) & " - " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpNeg: Return "-" & EmitExprFB(.Params(0), CodeLine)
-        Case OpMult: Return "(" & EmitExprFB(.Params(0), CodeLine) & " * " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpDiv: Return "(" & EmitExprFB(.Params(0), CodeLine) & " / " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpIntDiv: Return "(" & EmitExprFB(.Params(0), CodeLine) & " \ " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpMod: Return "(" & EmitExprFB(.Params(0), CodeLine) & " Mod " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpPower: Return "(" & EmitExprFB(.Params(0), CodeLine) & " ^ " & EmitExprFB(.Params(1), CodeLine) & ")"
+        Case OpAdd: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " + ", .Params(1), CodeLine) & ")"
+        Case OpSub: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " - ", .Params(1), CodeLine) & ")"
+        Case OpNeg: Return GenExprFB("-", .Params(0), CodeLine)
+        Case OpMult: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " * ", .Params(1), CodeLine) & ")"
+        Case OpDiv: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " / ", .Params(1), CodeLine) & ")"
+        Case OpIntDiv: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " \ ", .Params(1), CodeLine) & ")"
+        Case OpMod: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " Mod ", .Params(1), CodeLine) & ")"
+        Case OpPower: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " ^ ", .Params(1), CodeLine) & ")"
         'String
-        Case OpStrConcat: Return "(" & EmitExprFB(.Params(0), CodeLine) & " & " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpLen: Return "Len(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpLeft: Return "Left(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpRight: Return "Right(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpMid: Return "Mid(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")"
-        Case OpVal: Return "Val(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpStr: Return "Str(" & EmitExprFB(.Params(0), CodeLine) & ")"
+        Case OpStrConcat: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " & ", .Params(1), CodeLine) & ")"
+        Case OpLen: Return GenExprFB("Len(", .Params(0), CodeLine) & ")"
+        Case OpLeft: Return GenExprFB(GenExprFB("Left(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ")"
+        Case OpRight: Return GenExprFB(GenExprFB("Right(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ")"
+        Case OpMid: Return GenExprFB(GenExprFB(GenExprFB("Mid(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ")"
+        Case OpVal: Return GenExprFB("Val(", .Params(0), CodeLine) & ")"
+        Case OpStr: Return GenExprFB("Str(", .Params(0), CodeLine) & ")"
         'Comparison
-        Case OpEquil: Return "(" & EmitExprFB(.Params(0), CodeLine) & " = " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpNotEquil: Return "(" & EmitExprFB(.Params(0), CodeLine) & " <> " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpGreater: Return "(" & EmitExprFB(.Params(0), CodeLine) & " > " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpLessthan: Return "(" & EmitExprFB(.Params(0), CodeLine) & " < " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpGreaterEquil: Return "(" & EmitExprFB(.Params(0), CodeLine) & " >= " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpLessthanEquil: Return "(" & EmitExprFB(.Params(0), CodeLine) & " <= " & EmitExprFB(.Params(1), CodeLine) & ")"
+        Case OpEquil: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " = ", .Params(1), CodeLine) & ")"
+        Case OpNotEquil: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " <> ", .Params(1), CodeLine) & ")"
+        Case OpGreater: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " > ", .Params(1), CodeLine) & ")"
+        Case OpLessthan: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " < ", .Params(1), CodeLine) & ")"
+        Case OpGreaterEquil: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " >= ", .Params(1), CodeLine) & ")"
+        Case OpLessthanEquil: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " <= ", .Params(1), CodeLine) & ")"
         'Logical
-        Case OpAnd: Return "(" & EmitExprFB(.Params(0), CodeLine) & " And " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpOr: Return "(" & EmitExprFB(.Params(0), CodeLine) & " Or " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpXOr: Return "(" & EmitExprFB(.Params(0), CodeLine) & " XOr " & EmitExprFB(.Params(1), CodeLine) & ")"
-        Case OpNot: Return "Not " & EmitExprFB(.Params(0), CodeLine)
+        Case OpAnd: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " And ", .Params(1), CodeLine) & ")"
+        Case OpOr: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " Or ", .Params(1), CodeLine) & ")"
+        Case OpXOr: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " XOr ", .Params(1), CodeLine) & ")"
+        Case OpNot: Return GenExprFB("Not ", .Params(0), CodeLine)
         'Math Functions
-        Case OpAbs: Return "Abs(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpSgn: Return "Sgn(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpInt: Return "Int(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpFix: Return "Fix(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpSin: Return "Sin(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpCos: Return "Cos(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpTan: Return "Tan(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpAtn: Return "Atn(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpExp: Return "Exp(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpLog: Return "Log(" & EmitExprFB(.Params(0), CodeLine) & ")"
-        Case OpSqr: Return "Sqr(" & EmitExprFB(.Params(0), CodeLine) & ")"
+        Case OpAbs: Return GenExprFB("Abs(", .Params(0), CodeLine) & ")"
+        Case OpSgn: Return GenExprFB("Sgn(", .Params(0), CodeLine) & ")"
+        Case OpInt: Return GenExprFB("Int(", .Params(0), CodeLine) & ")"
+        Case OpFix: Return GenExprFB("Fix(", .Params(0), CodeLine) & ")"
+        Case OpSin: Return GenExprFB("Sin(", .Params(0), CodeLine) & ")"
+        Case OpCos: Return GenExprFB("Cos(", .Params(0), CodeLine) & ")"
+        Case OpTan: Return GenExprFB("Tan(", .Params(0), CodeLine) & ")"
+        Case OpAtn: Return GenExprFB("Atn(", .Params(0), CodeLine) & ")"
+        Case OpExp: Return GenExprFB("Exp(", .Params(0), CodeLine) & ")"
+        Case OpLog: Return GenExprFB("Log(", .Params(0), CodeLine) & ")"
+        Case OpSqr: Return GenExprFB("Sqr(", .Params(0), CodeLine) & ")"
         'Player Inputs
-        Case OpInKey: Return "InKey"
-        Case OpMultiKey: Return "MultiKey(" & EmitExprFB(.Params(0), CodeLine) & ")"
+        Case OpInKey: Return "Inkey"
+        Case OpMultiKey: Return GenExprFB("MultiKey(", .Params(0), CodeLine) & ")"
         Case OpGetJoystick
-            Return "GetJoystick(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & _
-                                    EmitExprFB(.Params(2), CodeLine) & ", " & EmitExprFB(.Params(3), CodeLine) & ", " & EmitExprFB(.Params(4), CodeLine) & ", " & EmitExprFB(.Params(5), CodeLine) & ", " & _
-                                    EmitExprFB(.Params(6), CodeLine) & ", " & EmitExprFB(.Params(7), CodeLine) & ", " & EmitExprFB(.Params(8), CodeLine) & ", " & EmitExprFB(.Params(9), CodeLine) & ")"
-        Case OpGetMouse: Return "GetMouse(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ", " & EmitExprFB(.Params(3), CodeLine) & ")"
+            Return GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB( _
+                   "GetJoystick(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", " _
+                                 , .Params(2), CodeLine) & ", ", .Params(3), CodeLine) & ", ", .Params(4), CodeLine) & ", ", .Params(5), CodeLine) & ", " _
+                                 , .Params(6), CodeLine) & ", ", .Params(7), CodeLine) & ", ", .Params(8), CodeLine) & ", ", .Params(9), CodeLine) & ")"
+        Case OpGetMouse: Return GenExprFB(GenExprFB(GenExprFB(GenExprFB("GetMouse(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ", ", .Params(3), CodeLine) & ")"
         'Robot I/O
-        Case OpReadMsg: Return "ReadMsg(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")"
+        Case OpReadMsg: Return GenExprFB(GenExprFB(GenExprFB("ReadMsg(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ")"
         'Image Buffer Management
-        Case OpImageCreate: Return "ImageCreate(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")"
+        Case OpImageCreate: Return GenExprFB(GenExprFB(GenExprFB("ImageCreate(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ")"
         'MISC
-        Case OpRGB: Return "RGB(" & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")"
+        Case OpRGB: Return GenExprFB(GenExprFB(GenExprFB("RGB(", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ")"
         Case OpTimer: Return "Timer"
-        Case OpRnd: Return "Rnd(" & EmitExprFB(.Params(0), CodeLine) & ")"
+        Case OpRnd: Return GenExprFB("Rnd(", .Params(0), CodeLine) & ")"
         End Select
         End With
     End Select
@@ -1006,57 +1014,61 @@ Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst
         Var Code = "Dim " & LVar.VarName
         If (LVar.VarType And VtArray) <> 0 Then Code &= "()"
         Return Code & " As " & TypeNameFB(LVar.VarType)
-    Case OpAssign: Return EmitExprFB(.Params(0), CodeLine) & " = " & EmitExprFB(.Params(1), CodeLine)
-    Case OpReDim: Return "ReDim " & VarNameFromExpr(.Params(0)) & "(" & EmitExprFB(.Params(1), CodeLine) & ")"
-    Case OpReDimPreserve: Return "ReDim Preserve " & VarNameFromExpr(.Params(0)) & "(" & EmitExprFB(.Params(1), CodeLine) & ")"
-    Case OpErase: Return "Erase " & EmitExprFB(.Params(0), CodeLine)
+    Case OpAssign: Return GenExprFB(GenExprFB(, .Params(0), CodeLine) & " = ", .Params(1), CodeLine)
+    Case OpReDim: Return GenExprFB("ReDim " & VarNameFromExpr(.Params(0)) & "(", .Params(1), CodeLine) & ")"
+    Case OpReDimPreserve: Return GenExprFB("ReDim Preserve " & VarNameFromExpr(.Params(0)) & "(", .Params(1), CodeLine) & ")"
+    Case OpErase: Return GenExprFB("Erase ", .Params(0), CodeLine)
     'Flow Control
-    Case OpIfThen: Return "If " & EmitExprFB(.Params(0), CodeLine) & " Then " & EmitTopExprFB(.Params(1), CodeLine)
-    Case OpIf: Return "If " & EmitExprFB(.Params(1), CodeLine) & " Then"
-    Case OpElseIf: Return "ElseIf " & EmitExprFB(.Params(1), CodeLine) & " Then"
+    Case OpIfThen: Return GenTopExprFB(GenExprFB("If ", .Params(0), CodeLine) & " Then ", .Params(1), CodeLine)
+    Case OpIf: Return GenExprFB("If ", .Params(1), CodeLine) & " Then"
+    Case OpElseIf: Return GenExprFB("ElseIf ", .Params(1), CodeLine) & " Then"
     Case OpElse: Return "Else"
     Case OpEndIf: Return "End If"
-    Case OpSelectCase:  Return "Select Case " & EmitExprFB(.Params(1), CodeLine)
-    Case OpCase:  Return "Case " & EmitExprFB(.Params(1), CodeLine)
+    Case OpSelectCase:  Return GenExprFB("Select Case ", .Params(1), CodeLine)
+    Case OpCase:  Return GenExprFB("Case ", .Params(1), CodeLine)
     Case OpCaseElse: Return "Case Else"
     Case OpEndSelect:  Return "End Select"
     Case OpDo: Return "Do"
-    Case OpDoWhile: Return "Do While " & EmitExprFB(.Params(0), CodeLine)
-    Case OpDoUntil: Return "Do Until " & EmitExprFB(.Params(0), CodeLine)
+    Case OpDoWhile: Return GenExprFB("Do While ", .Params(0), CodeLine)
+    Case OpDoUntil: Return GenExprFB("Do Until ", .Params(0), CodeLine)
     Case OpLoop: Return "Loop"
-    Case OpLoopWhile: Return "Loop While " & EmitExprFB(.Params(1), CodeLine)
-    Case OpLoopUntil: Return "Loop Until " & EmitExprFB(.Params(1), CodeLine)
-    Case OpFor: Return "For " & EmitExprFB(.Params(0), CodeLine) & " = " & EmitExprFB(.Params(1), CodeLine) & " To " & EmitExprFB(.Params(2), CodeLine)
-    Case OpForStep: Return "For " & EmitExprFB(.Params(0), CodeLine) & " = " & EmitExprFB(.Params(1), CodeLine) & " To " & EmitExprFB(.Params(2), CodeLine) & " Step " & EmitExprFB(.Params(3), CodeLine)
+    Case OpLoopWhile: Return GenExprFB("Loop While ", .Params(1), CodeLine)
+    Case OpLoopUntil: Return GenExprFB("Loop Until ", .Params(1), CodeLine)
+    Case OpFor: Return GenExprFB(GenExprFB(GenExprFB("For ", .Params(0), CodeLine) & " = ", .Params(1), CodeLine) & " To ", .Params(2), CodeLine)
+    Case OpForStep: Return GenExprFB(GenExprFB(GenExprFB(GenExprFB("For ", .Params(0), CodeLine) & " = ", .Params(1), CodeLine) & " To ", .Params(2), CodeLine) & " Step ", .Params(3), CodeLine)
     Case OpNext
         Var Tmp = @CurProc->Lines(CurProc->LineNums(.Params(0).Index))
         Return "Next " & EmitExprFB(Tmp->Tree(UBound(Tmp->Tree)).Params(0), *Tmp)
     Case OpGOTO: Return "GOTO " & CurProc->Lines(CurProc->LineNums(.Params(0).Index)).LineLabel
     'Procedures
     Case OpCallSub
-        Var Code = EmitExprFB(.Params(0), CodeLine) & " "
+        Var Code = GenExprFB(, .Params(0), CodeLine) & " "
         For I As Integer = 1 To UBound(.Params) - 1
-            Code &= EmitExprFB(.Params(I), CodeLine) & ", "
+            Code = GenExprFB(Code, .Params(I), CodeLine) & ", "
         Next I
-        If UBound(.Params) >= 1 Then Code &= EmitExprFB(.Params(UBound(.Params)), CodeLine)
+        If UBound(.Params) >= 1 Then Code = GenExprFB(Code, .Params(UBound(.Params)), CodeLine)
         Return Code
     Case OpReturn
-        Return "Return" & IIf(UBound(.Params) = 0, " " & EmitExprFB(.Params(0), CodeLine), "")
+        If UBound(.Params) = 0 Then
+            Return GenExprFB("Return ", .Params(0), CodeLine)
+           Else
+            Return "Return"
+        End If
     Case OpEnd: Return "End"
     'Robot I/O
-    Case OpBotGo: Return "BotGo " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ", " & EmitExprFB(.Params(3), CodeLine) & ", " & EmitExprFB(.Params(4), CodeLine)
-    Case OpSendMsg: Return "SendMsg " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine)
+    Case OpBotGo: Return GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB("BotGo ", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ", ", .Params(3), CodeLine) & ", ", .Params(4), CodeLine)
+    Case OpSendMsg: Return GenExprFB(GenExprFB(GenExprFB("SendMsg ", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine)
     'Image Buffer Commands
     Case OpCls: Return "Cls"
     Case OpPSet
         Var Code = "PSet "
-        If Not IsConstNull(.Params(0), CodeLine) Then Code &= EmitExprFB(.Params(0), CodeLine) & ", "
-        Code &= "(" & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & "), " & EmitExprFB(.Params(3), CodeLine)
+        If Not IsConstNull(.Params(0), CodeLine) Then Code = GenExprFB(Code, .Params(0), CodeLine) & ", "
+        Code = GenExprFB(GenExprFB(GenExprFB(Code & "(", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & "), ", .Params(3), CodeLine)
         Return Code
     Case OpLine
         Var Code = "Line "
-        If Not IsConstNull(.Params(0), CodeLine) Then Code &= EmitExprFB(.Params(0), CodeLine) & ", "
-        Code &= "(" & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")-(" & EmitExprFB(.Params(3), CodeLine) & ", " & EmitExprFB(.Params(4), CodeLine) & "), " & EmitExprFB(.Params(5), CodeLine)
+        If Not IsConstNull(.Params(0), CodeLine) Then Code = GenExprFB(Code, .Params(0), CodeLine) & ", "
+        Code = GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(Code & "(", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ")-(", .Params(3), CodeLine) & ", ", .Params(4), CodeLine) & "), ", .Params(5), CodeLine)
         Select Case Val(CodeLine.ConstantLiterals(.Params(6).Index).VarName)
         Case 0
         Case 1: Code &= ", B"
@@ -1065,24 +1077,24 @@ Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst
         Return Code
     Case OpCircle
         Var Code = "Circle "
-        If Not IsConstNull(.Params(0), CodeLine) Then Code &= EmitExprFB(.Params(0), CodeLine) & ", "
-        Code &= "(" & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & "), " & EmitExprFB(.Params(3), CodeLine) & ", " & EmitExprFB(.Params(4), CodeLine) & ", " & EmitExprFB(.Params(5), CodeLine) & ", " & EmitExprFB(.Params(6), CodeLine) & ", " & EmitExprFB(.Params(7), CodeLine)
-        If Val(CodeLine.ConstantLiterals(.Params(8).Index).VarName) = 1 Then Code &= ", F"
+        If Not IsConstNull(.Params(0), CodeLine) Then Code = GenExprFB(Code, .Params(0), CodeLine) & ", "
+        Code = GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(Code & "(", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & "), ", .Params(3), CodeLine) & ", ", .Params(4), CodeLine) & ", ", .Params(5), CodeLine) & ", ", .Params(6), CodeLine) & ", ", .Params(7), CodeLine)
+        If IsConstNum(1, .Params(8), CodeLine) Then Code &= ", F"
         Return Code
     Case OpDrawString
         Var Code = "Draw String "
-        If Not IsConstNull(.Params(0), CodeLine) Then Code &= EmitExprFB(.Params(0), CodeLine) & ", "
-        Code &= "(" & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & "), " & EmitExprFB(.Params(3), CodeLine) & ", " & EmitExprFB(.Params(4), CodeLine)
+        If Not IsConstNull(.Params(0), CodeLine) Then Code = GenExprFB(Code, .Params(0), CodeLine) & ", "
+        Code = GenExprFB(GenExprFB(GenExprFB(GenExprFB(Code & "(", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & "), ", .Params(3), CodeLine) & ", ", .Params(4), CodeLine)
         Return Code
     Case OpGet
         Var Code = "Get "
-        If Not IsConstNull(.Params(0), CodeLine) Then Code &= EmitExprFB(.Params(0), CodeLine) & ", "
-        Code &= "(" & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & ")-(" & EmitExprFB(.Params(3), CodeLine) & ", " & EmitExprFB(.Params(4), CodeLine) & "), " & EmitExprFB(.Params(5), CodeLine)
+        If Not IsConstNull(.Params(0), CodeLine) Then Code = GenExprFB(Code, .Params(0), CodeLine) & ", "
+        Code = GenExprFB(GenExprFB(GenExprFB(GenExprFB(GenExprFB(Code & "(", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & ")-(", .Params(3), CodeLine) & ", ", .Params(4), CodeLine) & "), ", .Params(5), CodeLine)
         Return Code
     Case OpPut
         Var Code = "Put "
-        If Not IsConstNull(.Params(0), CodeLine) Then Code &= EmitExprFB(.Params(0), CodeLine) & ", "
-        Code &= "(" & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine) & "), " & EmitExprFB(.Params(3), CodeLine)
+        If Not IsConstNull(.Params(0), CodeLine) Then Code = GenExprFB(Code, .Params(0), CodeLine) & ", "
+        Code = GenExprFB(GenExprFB(GenExprFB(Code & "(", .Params(1), CodeLine) & ", ", .Params(2), CodeLine) & "), ", .Params(3), CodeLine)
         Select Case Val(CodeLine.ConstantLiterals(.Params(4).Index).VarName)
         Case 0 'XOr
         Case 1: Code &= ", PSet"
@@ -1097,19 +1109,19 @@ Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst
     Case OpScreenLock: Return "ScreenLock"
     Case OpScreenUnlock: Return "ScreenUnlock"
     'Image Buffer Management
-    Case OpScreenRes: Return "ScreenRes " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", 32"
-    Case OpImageDestroy: Return "ImageDestroy " & EmitExprC(.Params(0), CodeLine)
+    Case OpScreenRes: Return GenExprFB(GenExprFB("ScreenRes ", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", 32"
+    Case OpImageDestroy: Return GenExprFB("ImageDestroy ", .Params(0), CodeLine)
     'Console
     Case OpLocate
         If IsConstNum(-1, .Params(2), CodeLine) Then
-            Return "Locate " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine)
+            Return GenExprFB(GenExprFB("Locate ", .Params(0), CodeLine) & ", ", .Params(1), CodeLine)
            Else
-            Return "Locate " & EmitExprFB(.Params(0), CodeLine) & ", " & EmitExprFB(.Params(1), CodeLine) & ", " & EmitExprFB(.Params(2), CodeLine)
+            Return GenExprFB(GenExprFB(GenExprFB("Locate ", .Params(0), CodeLine) & ", ", .Params(1), CodeLine) & ", ", .Params(2), CodeLine)
         End If
-    Case OpPrint: Return "Print " & EmitExprFB(.Params(0), CodeLine) & IIf(Val(CodeLine.ConstantLiterals(.Params(1).Index).VarName) = 0, "", ";")
+    Case OpPrint: Return GenExprFB("Print ", .Params(0), CodeLine) & IIf(IsConstNum(0, .Params(1), CodeLine), "", ";")
     'MISC
-    Case OpRandomize: Return "Randomize " & EmitExprFB(.Params(0), CodeLine)
-    Case OpSleep: Return "Sleep " & EmitExprFB(.Params(0), CodeLine)
+    Case OpRandomize: Return GenExprFB("Randomize ", .Params(0), CodeLine)
+    Case OpSleep: Return GenExprFB("Sleep ", .Params(0), CodeLine)
     End Select
     End With
     
@@ -1120,9 +1132,11 @@ Function EmitLineFB(CodeLine As BASIC_LineOfCodeAst) As String
     Dim Code As String
     If CodeLine.LineLabel <> "" Then Code = CodeLine.LineLabel & ": "
     
-    If UBound(CodeLine.Tree) < 0 Then Return Code & CodeLine.CommentStr & !"\n"
-    
-    'CodeLine.CodeStr = EmitTopExprFB(Type(Operation, UBound(CodeLine.Tree)), CodeLine)
+    If UBound(CodeLine.Tree) < 0 Then
+        CodeLine.CodeStr = ""
+       Else
+        CodeLine.CodeStr = EmitTopExprFB(Type(Operation, UBound(CodeLine.Tree)), CodeLine)
+    End If
     
     Return Code & CodeLine.CodeStr & CodeLine.CommentStr
 End Function
@@ -1418,7 +1432,7 @@ Function EmitTopExprC(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst)
         Case VtString: Code &= " = { 0, 0, 0 };"
         End Select
         If (LVar.VarType And VtArray) <> 0 Then
-            Code &= " = {0, 0, 0, sizeof(" & TypeNameC(LVar.VarType And &HFF) & !"), 0, " _
+            Code &= " = {0, 0, 0, sizeof(" & TypeNameC(LVar.VarType And &HFF) & "), 0, " _
                     "{{0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}}};"
             'Code &= "; memset((char*)&" & UCase(LVar.VarName) & ", 0, sizeof(" & TypeNameC(VtArray) & ")); "
             'Code &= UCase(LVar.VarName) & ".ELEMENT_LEN = sizeof(" & TypeNameC(LVar.VarType And &HFF) & ");"
