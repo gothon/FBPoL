@@ -80,7 +80,7 @@ Sub StyleFromExpr(L As FormattedLine, ByRef StartPos As Integer, Expr As BASIC_E
         StartPos = Expr.CodeStart
     End If
     Select Case Expr.ExprType
-    Case ConstantLiteral
+    Case ConstantLiteral, LineNumberReference
         ReDim Preserve L.SR(UBound(L.SR) + 1)
         L.SR(UBound(L.SR)).StyleIdx = 0
         L.SR(UBound(L.SR)).RunLen = Expr.CodeLen
@@ -115,7 +115,26 @@ Function LineFromCode(LineNum As Integer, LenLineNums As Integer, CodeLine As BA
         L.SR(UBound(L.SR)).RunLen = Len(CodeLine.LineLabel) + 2
     End If
     
-    If UBound(CodeLine.Tree) >= 0 Then StyleFromExpr L, 0, Type(Operation, UBound(CodeLine.Tree)), CodeLine
+    Var J = 0
+    If UBound(CodeLine.Tree) >= 0 Then StyleFromExpr L, J, Type(Operation, UBound(CodeLine.Tree)), CodeLine
+    J += 4 * CodeLine.IndentDepth + LenLineNums + 1
+    If CodeLine.LineLabel <> "" Then J += Len(CodeLine.LineLabel) + 2
+    
+    If J < Len(L.Text) - Len(CodeLine.CommentStr) Then
+        If CodeLine.Tree(UBound(CodeLine.Tree)).OpType = OpNext Then
+            ReDim Preserve L.SR(UBound(L.SR) + 1)
+            L.SR(UBound(L.SR)).StyleIdx = 1
+            L.SR(UBound(L.SR)).RunLen = 5
+            J += 5
+            ReDim Preserve L.SR(UBound(L.SR) + 1)
+            L.SR(UBound(L.SR)).StyleIdx = 2
+            L.SR(UBound(L.SR)).RunLen = Len(L.Text) - J - Len(CodeLine.CommentStr)
+           Else
+            ReDim Preserve L.SR(UBound(L.SR) + 1)
+            L.SR(UBound(L.SR)).StyleIdx = 1
+            L.SR(UBound(L.SR)).RunLen = Len(L.Text) - J - Len(CodeLine.CommentStr)
+        End If
+    End If
     
     If CodeLine.CommentStr <> "" Then
         ReDim Preserve L.SR(UBound(L.SR) + 1)

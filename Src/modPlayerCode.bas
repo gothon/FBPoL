@@ -212,6 +212,7 @@ Sub GenDefPlayerProg
         ._Loop
         
         LLabel(ExitDo)
+        .BlankLine
         
         .If_ ID = 16
             _Cls

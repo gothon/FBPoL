@@ -910,6 +910,19 @@ Function GenTopExprFB(Lhs As String, Expr As BASIC_Expression, CodeLine As BASIC
     Return Lhs & Code
 End Function
 
+Function GenVarNameFromExpr(Lhs As String = "", Expr As BASIC_Expression) As String
+    Var Code = VarNameFromExpr(Expr)
+    Expr.CodeStart = Len(Lhs)
+    Expr.CodeLen = Len(Code)
+    Return Lhs & Code
+End Function
+
+Function GenExprStr(Lhs As String, Expr As BASIC_Expression, Rhs As String) As String
+    Expr.CodeStart = Len(Lhs)
+    Expr.CodeLen = Len(Rhs)
+    Return Lhs & Rhs
+End Function
+
 Function EmitExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) As String
     Select Case Expr.ExprType
     Case ConstantLiteral
@@ -927,8 +940,8 @@ Function EmitExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst) A
         With CodeLine.Tree(Expr.Index)
         Select Case As Const .OpType
         'Variables and Arrays
-        Case OpArrayAccess: Return GenExprFB(VarNameFromExpr(.Params(0)) & "(", .Params(1), CodeLine) & ")"
-        Case OpUBound: Return "UBound(" & VarNameFromExpr(.Params(0)) & ")"
+        Case OpArrayAccess: Return GenExprFB(GenVarNameFromExpr(, .Params(0)) & "(", .Params(1), CodeLine) & ")"
+        Case OpUBound: Return GenVarNameFromExpr("UBound(", .Params(0)) & ")"
         'Flow Control
         Case OpAndAlso: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " AndAlso ", .Params(1), CodeLine) & ")"
         Case OpOrElse: Return GenExprFB(GenExprFB("(", .Params(0), CodeLine) & " OrElse ", .Params(1), CodeLine) & ")"
@@ -1011,12 +1024,16 @@ Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst
     'Variables and Arrays
     Case OpDim
         Var LVar = CurProc->LocalVars(.Params(0).Index)
-        Var Code = "Dim " & LVar.VarName
-        If (LVar.VarType And VtArray) <> 0 Then Code &= "()"
+        Var Code = "Dim "
+        If (LVar.VarType And VtArray) <> 0 Then
+            Code = GenExprStr(Code, .Params(0), LVar.VarName & "()")
+           Else
+            Code = GenExprStr(Code, .Params(0), LVar.VarName)
+        End If
         Return Code & " As " & TypeNameFB(LVar.VarType)
     Case OpAssign: Return GenExprFB(GenExprFB(, .Params(0), CodeLine) & " = ", .Params(1), CodeLine)
-    Case OpReDim: Return GenExprFB("ReDim " & VarNameFromExpr(.Params(0)) & "(", .Params(1), CodeLine) & ")"
-    Case OpReDimPreserve: Return GenExprFB("ReDim Preserve " & VarNameFromExpr(.Params(0)) & "(", .Params(1), CodeLine) & ")"
+    Case OpReDim: Return GenExprFB(GenVarNameFromExpr("ReDim ", .Params(0)) & "(", .Params(1), CodeLine) & ")"
+    Case OpReDimPreserve: Return GenExprFB(GenVarNameFromExpr("ReDim Preserve ", .Params(0)) & "(", .Params(1), CodeLine) & ")"
     Case OpErase: Return GenExprFB("Erase ", .Params(0), CodeLine)
     'Flow Control
     Case OpIfThen: Return GenTopExprFB(GenExprFB("If ", .Params(0), CodeLine) & " Then ", .Params(1), CodeLine)
@@ -1039,7 +1056,7 @@ Function EmitTopExprFB(Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst
     Case OpNext
         Var Tmp = @CurProc->Lines(CurProc->LineNums(.Params(0).Index))
         Return "Next " & EmitExprFB(Tmp->Tree(UBound(Tmp->Tree)).Params(0), *Tmp)
-    Case OpGOTO: Return "GOTO " & CurProc->Lines(CurProc->LineNums(.Params(0).Index)).LineLabel
+    Case OpGOTO: Return GenExprStr("GOTO ", .Params(0), CurProc->Lines(CurProc->LineNums(.Params(0).Index)).LineLabel)
     'Procedures
     Case OpCallSub
         Var Code = GenExprFB(, .Params(0), CodeLine) & " "
