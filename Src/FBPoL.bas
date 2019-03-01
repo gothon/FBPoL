@@ -19,16 +19,6 @@ Type UserInterfaceState
     GamePad(Any) As SDL_GameController Ptr
 End Type
 
-'#Inclib https://registry.npmjs.org/left-pad
-'https://xkcd.com/2102/
-'https://www.davidhaney.io/npm-left-pad-have-we-forgotten-how-to-program/
-Function LeftPad (St As String, Length As Integer, Ch As String = " ") As String
-    Return String(Length - Len(St), Ch) & St
-End Function
-'I hope I don't forget how to program :P
-' zlib depencency, no PNG files loaded or saved
-' SDL2_mixer dependency, no sound effects or music (yet!)
-
 Function GetAllScreenBounds As SDL_Rect
     Dim As SDL_Rect Bounds, All
     For I As Integer = 0 To SDL_GetNumVideoDisplays - 1
@@ -536,42 +526,46 @@ Scope
     UI.Menu(0).X = 10
     UI.Menu(0).Y = 10
     UI.Menu(0).W = RI.Bounds.W - 100
-    UI.Menu(0).H = 27
-    UI.Menu(0).Sel = 1
-    ReDim (UI.Menu(0).OptionText)(UBound(WS.ProgUnit(0).Code.Proc) + 1)
+    UI.Menu(0).H = 37
+    UI.Menu(0).Sel = 2
+    ReDim (UI.Menu(0).OptionText)(UBound(WS.ProgUnit(0).Code.Proc) + 2)
+    UI.Menu(0).OptionText(0).Text = "Global Variables"
     For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc)
-        ReDim (UI.Menu(0).OptionText(I).LineTxt)(0)
+        'ReDim (UI.Menu(0).OptionText(I).LineTxt)(0)
         If WS.ProgUnit(0).Code.Proc(I).ProcName = "Run" Then
-            UI.Menu(0).OptionText(I).LineTxt(0).Text = "Main Program Body"
+            UI.Menu(0).OptionText(I+1).Text = "Main Program Body"
            Else
             If WS.ProgUnit(0).Code.Proc(I).ReturnType = VtVOID Then
-                UI.Menu(0).OptionText(I).LineTxt(0).Text = "Sub "
+                UI.Menu(0).OptionText(I+1).Text = "Sub "
                Else
-                UI.Menu(0).OptionText(I).LineTxt(0).Text = "Function "
+                UI.Menu(0).OptionText(I+1).Text = "Function "
             End If
-            UI.Menu(0).OptionText(I).LineTxt(0).Text &= WS.ProgUnit(0).Code.Proc(I).ProcName
+            UI.Menu(0).OptionText(I+1).Text &= WS.ProgUnit(0).Code.Proc(I).ProcName
         End If
     Next I
-    ReDim (UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).LineTxt)(0)
-    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).LineTxt(0).Text = "New Sub or New Function"
+    'ReDim (UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).LineTxt)(0)
+    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).Text = "New Sub or New Function"
     
     UI.Menu(1).X = 10
-    UI.Menu(1).Y = 47
+    UI.Menu(1).Y = 57
     UI.Menu(1).W = RI.Bounds.W - 100
-    UI.Menu(1).H = RI.Bounds.H - 70
+    UI.Menu(1).H = RI.Bounds.H - 68
     UI.Menu(1).Sel = 0
     UI.Menu(1).SelBoxCol = RGB(200, 64, 64)
     ReDim (UI.Menu(1).TextStyles)(4)
-    UI.Menu(1).TextStyles(0).Col = RGB(0, 0, 0)
-    UI.Menu(1).TextStyles(1).Col = RGB(0, 0, 128)
-    UI.Menu(1).TextStyles(2).Col = RGB(128, 0, 128)
-    UI.Menu(1).TextStyles(3).Col = RGB(0, 128, 0)
+    UI.Menu(1).TextStyles(0).Col = RGB(0, 0, 0) 'Else
+    UI.Menu(1).TextStyles(1).Col = RGB(0, 0, 128) 'Keyword
+    UI.Menu(1).TextStyles(2).Col = RGB(128, 0, 128) 'Identifier
+    UI.Menu(1).TextStyles(3).Col = RGB(0, 128, 0) 'Comment
     ReDim (UI.Menu(1).OptionText)(UBound(WS.ProgUnit(0).Code.Proc(1).Lines))
     Var LenLineNums = Len(Str(UBound(WS.ProgUnit(0).Code.Proc(1).Lines) + 1))
     For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc(1).Lines)
-        ReDim (UI.Menu(1).OptionText(I).LineTxt)(0)
+        'ReDim (UI.Menu(1).OptionText(I).LineTxt)(0)
         Var CodeLine = @WS.ProgUnit(0).Code.Proc(1).Lines(I)
-        UI.Menu(1).OptionText(I).LineTxt(0).Text = LeftPad(Str(I + 1), LenLineNums) & " " & Space(4 * CodeLine->IndentDepth) & EmitLineFB(*CodeLine)
+        UI.Menu(1).OptionText(I) = LineFromCode(I + 1, LenLineNums, *CodeLine)
+        'UI.Menu(1).OptionText(I).Text = LeftPad(Str(I + 1), LenLineNums) & " " & Space(4 * CodeLine->IndentDepth) & UI.Menu(1).OptionText(I).Text
+        
+        'UI.Menu(1).OptionText(I).LineTxt(0).Text = LeftPad(Str(I + 1), LenLineNums) & " " & Space(4 * CodeLine->IndentDepth) & EmitLineFB(*CodeLine)
     Next I
     
     ' Message Loop

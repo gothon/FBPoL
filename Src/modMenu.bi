@@ -3,6 +3,8 @@
 
 #Include Once "GL/gl.bi"
 
+#Include "modBASIC.bi"
+
 Enum TextStyle
     Bold = 1
     Italic = 2
@@ -15,14 +17,14 @@ Type TextFormat
     As TextStyle Style
 End Type
 
-Type FormattedText
-    As Integer StyleIdx
-    As String Text
+Type StyleRun
+    As Integer StyleIdx, RunLen
 End Type
 
 Type FormattedLine
     As Integer W, H, Selectable = -1
-    As FormattedText LineTxt(Any)
+    As StyleRun SR(Any)
+    As String Text
 End Type
 
 Type SuperMenuWidget
@@ -31,10 +33,8 @@ Type SuperMenuWidget
     As ULong BackCol = RGB(255, 255, 255), BoarderCol = RGB(128, 128, 128), SelBoxCol = RGB(200, 64, 64)
     As Integer Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0, Horizontal = 0, Enabled = -1, ParentIdx = -1
     TextStyles(Any) As TextFormat
-    'TitleText As FormattedText
     OptionText(Any) As FormattedLine
     
-    Declare Sub SetText(Text As String)
     Declare Sub Render()
 End Type
 
@@ -42,6 +42,8 @@ Type GUI_State
     As Integer FocusIndex, TabStops, MX, MY, MS, MB
     InK As String
 End Type
+
+Declare Function LineFromCode(LineNum As Integer, LenLineNums As Integer, CodeLine As BASIC_LineOfCodeAst) As FormattedLine
 
 'Type Menu
 '    Index As Integer
