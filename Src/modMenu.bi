@@ -25,6 +25,27 @@ Type FormattedLine
     As Integer W, H, Selectable = -1
     As StyleRun SR(Any)
     As String Text
+    
+    Declare Sub AddText(St As String, Style As Integer = 0)
+End Type
+
+Enum ButtonEvent
+    BtnNone
+    BtnUp
+    BtnDown
+    BtnPgUp
+    BtnPgDown
+    BtnLeft
+    BtnRight
+    BtnSelect
+    BtnBack
+    BtnMouseClick
+    BtnKeyTyped
+End Enum
+
+Type GUI_State
+    As Integer FocusIndex, TabStops, MX, MY, MS, MB
+    InK As String
 End Type
 
 Type SuperMenuWidget
@@ -35,30 +56,34 @@ Type SuperMenuWidget
     TextStyles(Any) As TextFormat
     OptionText(Any) As FormattedLine
     
-    Declare Sub Render()
-End Type
-
-Type GUI_State
-    As Integer FocusIndex, TabStops, MX, MY, MS, MB
-    InK As String
+    Declare Sub Render
+    Declare Sub DefaultColorCodingStyles
+    Declare Sub DoInput(BtnEvt As ButtonEvent, GUIS As GUI_State)
 End Type
 
 Declare Function LineFromCode(LineNum As Integer, LenLineNums As Integer, CodeLine As BASIC_LineOfCodeAst) As FormattedLine
 
-'Type Menu
-'    Index As Integer
-'    As Integer X, Y, Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0
-'    TitleText As String
-'    OptionText(Any) As String
-'End Type
-
-'Default Color Scheme?
-'  +, - purple (black)
-'  () - green (black)
-'  Comment - grey (green)
-'  constant literals - red (black)
-'  keywords - blue
-'  identifiers - purple
+'Keyboard Mapping
+'  Tab        - Change Focus (to another MenuWidget)
+'  Backspace  - Menu Back (Only when a Menu is Active and not Editing Text) 
+'  Esc        - Menu Back (brings up Main Menu when no Menu is Active)
+'  Enter      - Accept Selection
+'  Arrow Keys - Change Selection
+'  Page Up/Down - Scroll Page
+'
+'Joypad Mapping
+'  Btn4 (XInput 'Y')    - Change Focus
+'  Btn2 (XInput 'B')    - Menu Back (Only when a Menu is Active)
+'  Btn7 (XInput 'Back') - Menu Back / Main Menu
+'  Btn1 (XInput 'A')    - Accept Selection
+'  Left Analogue & DPAD - Change Selection
+'  + Btn3 (XInput 'X')  - Scroll Page
+'
+'Mouse
+'  Click - Set Focus & Accept Selection
+'  Hover - Highlight Click Preview
+'  Click (on an Inactive Menu Area) - Menu Back
+'  Drag Scrollbar - Scroll
 
 ' Features Needed:
 '   multiple menus

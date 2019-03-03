@@ -59,4 +59,5 @@ Declare Sub RenderTileTexture(VolTile() As Vox_Volume, Tilt As Single, Spin As S
 Declare Sub RenderTileMap(RI As RenderInfo, WS As WorldState, ByVal A As Vec3I, ByVal B As Vec3I)
 
 Declare Sub DrawRect(X1 As Integer, Y1 As Integer, X2 As Integer, Y2 As Integer)
+Declare Sub DrawSolidRect(X1 As Integer, Y1 As Integer, X2 As Integer, Y2 As Integer)
 Declare Sub DrawWireCube()

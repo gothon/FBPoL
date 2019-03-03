@@ -393,6 +393,15 @@ Sub DrawRect(X1 As Integer, Y1 As Integer, X2 As Integer, Y2 As Integer)
     glEnd
 End Sub
 
+Sub DrawSolidRect(X1 As Integer, Y1 As Integer, X2 As Integer, Y2 As Integer)
+    glBegin GL_QUADS
+    glVertex3i X1, Y1, 0
+    glVertex3i X2, Y1, 0
+    glVertex3i X2, Y2, 0
+    glVertex3i X1, Y2, 0
+    glEnd
+End Sub
+
 Sub DrawWireCube()
     glEnable GL_LINE_SMOOTH
     glHint GL_LINE_SMOOTH, GL_NICEST

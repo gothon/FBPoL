@@ -13,7 +13,14 @@ End Function
 ' zlib depencency, no PNG files loaded or saved
 ' SDL2_mixer dependency, no sound effects or music (yet!)
 
-Sub SuperMenuWidget.Render()
+Sub FormattedLine.AddText(St As String, Style As Integer = 0)
+    ReDim Preserve SR(UBound(SR) + 1)
+    SR(UBound(SR)).StyleIdx = Style
+    SR(UBound(SR)).RunLen = Len(St)
+    Text &= St
+End Sub
+
+Sub SuperMenuWidget.Render
     glDisable GL_DEPTH_TEST
     'glBindTexture GL_TEXTURE_2D, RI.GfxFont
     glMatrixMode GL_MODELVIEW
@@ -24,16 +31,15 @@ Sub SuperMenuWidget.Render()
     glDisable GL_TEXTURE_2D
     glEnable GL_BLEND
     glBlendFunc GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-    glColor4ub ULng_2_UBx3(BackCol), 220 '196 '
-    glBegin GL_QUADS
-    glVertex3i 0, 0, 0
-    glVertex3i W, 0, 0
-    glVertex3i W, H, 0
-    glVertex3i 0, H, 0
-    glEnd
+    glColor4ub ULng_2_UBx3(BackCol), 220
+    DrawSolidRect 0, 0, W, H
     glDisable GL_BLEND
     glColor4ub ULng_2_UBx3(BoarderCol), 255
     DrawRect 0, 0, W - 1, H - 1
+    If 9 * UBound(OptionText) + 10 > H Then
+        DrawRect W - 8, 0, W - 1, H - 1
+        DrawSolidRect W - 8, H * TopLine \ (UBound(OptionText) + 1), W - 1, H * (TopLine + H \ 9) \ (UBound(OptionText) + 1)
+    End If
     glEnable GL_TEXTURE_2D
     
     Var T = (SDL_GetTicks \ 500) Mod 2 'Blink Time
@@ -44,16 +50,10 @@ Sub SuperMenuWidget.Render()
         
         Var P = 0
         For J As Integer = 0 To UBound(OptionText(I).SR)
-            'DrawTextGL *Txt, 2, 9 * I + 2, 1, RGB(0, 0, 0)
-            'DrawTextGL *Txt, 1, 9 * I + 1, 1, RGB(128, 0, 128)', RGB(0, 0, 128)', RGB(0, 0, 0)'
             Var Col = RGB(0, 0, 0)
-            If OptionText(I).SR(J).StyleIdx < UBound(TextStyles) Then Col = TextStyles(OptionText(I).SR(J).StyleIdx).Col
+            If OptionText(I).SR(J).StyleIdx <= UBound(TextStyles) Then Col = TextStyles(OptionText(I).SR(J).StyleIdx).Col
             DrawTextGL Mid(*Txt, P + 1, OptionText(I).SR(J).RunLen), 8 * P + 2, 9 * I + 2, 1, BackCol
             DrawTextGL Mid(*Txt, P + 1, OptionText(I).SR(J).RunLen), 8 * P + 1, 9 * I + 1, 1, Col
-            'glDisable GL_TEXTURE_2D
-            'glColor4ub ULng_2_UBx3(Col), 255
-            'DrawRect 8 * P + 1, 9 * I + 1, 8 * P + 1 + 8 * OptionText(I).SR(J).RunLen, 9 * I + 1 + 8
-            'glEnable GL_TEXTURE_2D
             P += OptionText(I).SR(J).RunLen
         Next J
         DrawTextGL Mid(*Txt, P + 1, Len(*Txt) - P), 8 * P + 2, 9 * I + 2, 1, BackCol
@@ -71,6 +71,34 @@ Sub SuperMenuWidget.Render()
     glPopMatrix
 End Sub
 
+Sub SuperMenuWidget.DefaultColorCodingStyles
+    ReDim TextStyles(4)
+    TextStyles(0).Col = RGB(0, 0, 0) 'Const Literal
+    TextStyles(1).Col = RGB(0, 0, 160) 'Keyword
+    TextStyles(2).Col = RGB(144, 0, 144) 'Identifier
+    TextStyles(3).Col = RGB(0, 144, 0) 'Comment
+    TextStyles(4).Col = RGB(192, 0, 0) 'Red
+End Sub
+
+Sub SuperMenuWidget.DoInput(BtnEvt As ButtonEvent, GUIS As GUI_State)
+    Select Case BtnEvt
+    Case BtnNone
+    Case BtnUp
+    Case BtnDown
+        Sel += 1
+    Case BtnPgUp
+    Case BtnPgDown
+    Case BtnLeft
+    Case BtnRight
+    Case BtnSelect
+    Case BtnBack
+    Case BtnMouseClick
+    Case BtnKeyTyped
+        Select Case GUIS.InK
+        Case Else
+        End Select
+    End Select
+End Sub
 
 Sub StyleFromExpr(L As FormattedLine, ByRef StartPos As Integer, Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst)
     If Expr.CodeStart > 0 Then

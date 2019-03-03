@@ -17,6 +17,7 @@ Type UserInterfaceState
     As Integer SFPS, VFPS 'Simulation/Video Frames Per Second
     Menu(Any) As SuperMenuWidget
     GamePad(Any) As SDL_GameController Ptr
+    GUIS As GUI_State
 End Type
 
 Function GetAllScreenBounds As SDL_Rect
@@ -338,12 +339,7 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
             glEnable GL_BLEND
             glBlendFunc GL_ONE, GL_ONE_MINUS_SRC_ALPHA
             glColor4ub 64, 64, 200, 196
-            glBegin GL_QUADS
-            glVertex3i 0, 0, 0
-            glVertex3i CW, 0, 0
-            glVertex3i CW, CH, 0
-            glVertex3i 0, CH, 0
-            glEnd
+            DrawSolidRect 0, 0, CW, CH
             glDisable GL_BLEND
             glColor4ub 64, 64, 200, 255
             DrawRect -1, -1, CW, CH
@@ -528,23 +524,27 @@ Scope
     UI.Menu(0).W = RI.Bounds.W - 100
     UI.Menu(0).H = 37
     UI.Menu(0).Sel = 2
+    UI.Menu(0).DefaultColorCodingStyles
     ReDim (UI.Menu(0).OptionText)(UBound(WS.ProgUnit(0).Code.Proc) + 2)
-    UI.Menu(0).OptionText(0).Text = "Global Variables"
+    UI.Menu(0).OptionText(0).AddText "Shared ", 1
+    UI.Menu(0).OptionText(0).AddText "Globals", 0
     For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc)
-        'ReDim (UI.Menu(0).OptionText(I).LineTxt)(0)
         If WS.ProgUnit(0).Code.Proc(I).ProcName = "Run" Then
-            UI.Menu(0).OptionText(I+1).Text = "Main Program Body"
+            UI.Menu(0).OptionText(I + 1).Text = "Main Program Body"
            Else
             If WS.ProgUnit(0).Code.Proc(I).ReturnType = VtVOID Then
-                UI.Menu(0).OptionText(I+1).Text = "Sub "
+                UI.Menu(0).OptionText(I + 1).AddText "Sub ", 1
                Else
-                UI.Menu(0).OptionText(I+1).Text = "Function "
+                UI.Menu(0).OptionText(I + 1).AddText "Function ", 1
             End If
-            UI.Menu(0).OptionText(I+1).Text &= WS.ProgUnit(0).Code.Proc(I).ProcName
+            UI.Menu(0).OptionText(I + 1).AddText WS.ProgUnit(0).Code.Proc(I).ProcName, 2
         End If
     Next I
-    'ReDim (UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).LineTxt)(0)
-    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).Text = "New Sub or New Function"
+    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).AddText "New ", 4
+    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).AddText "Sub", 1
+    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).AddText " or "
+    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).AddText "New ", 4
+    UI.Menu(0).OptionText(UBound(UI.Menu(0).OptionText)).AddText "Function", 1
     
     UI.Menu(1).X = 10
     UI.Menu(1).Y = 57
@@ -552,20 +552,12 @@ Scope
     UI.Menu(1).H = RI.Bounds.H - 68
     UI.Menu(1).Sel = 0
     UI.Menu(1).SelBoxCol = RGB(200, 64, 64)
-    ReDim (UI.Menu(1).TextStyles)(4)
-    UI.Menu(1).TextStyles(0).Col = RGB(0, 0, 0) 'Else
-    UI.Menu(1).TextStyles(1).Col = RGB(0, 0, 128) 'Keyword
-    UI.Menu(1).TextStyles(2).Col = RGB(128, 0, 128) 'Identifier
-    UI.Menu(1).TextStyles(3).Col = RGB(0, 128, 0) 'Comment
+    UI.Menu(1).DefaultColorCodingStyles
     ReDim (UI.Menu(1).OptionText)(UBound(WS.ProgUnit(0).Code.Proc(1).Lines))
     Var LenLineNums = Len(Str(UBound(WS.ProgUnit(0).Code.Proc(1).Lines) + 1))
     For I As Integer = 0 To UBound(WS.ProgUnit(0).Code.Proc(1).Lines)
-        'ReDim (UI.Menu(1).OptionText(I).LineTxt)(0)
         Var CodeLine = @WS.ProgUnit(0).Code.Proc(1).Lines(I)
         UI.Menu(1).OptionText(I) = LineFromCode(I + 1, LenLineNums, *CodeLine)
-        'UI.Menu(1).OptionText(I).Text = LeftPad(Str(I + 1), LenLineNums) & " " & Space(4 * CodeLine->IndentDepth) & UI.Menu(1).OptionText(I).Text
-        
-        'UI.Menu(1).OptionText(I).LineTxt(0).Text = LeftPad(Str(I + 1), LenLineNums) & " " & Space(4 * CodeLine->IndentDepth) & EmitLineFB(*CodeLine)
     Next I
     
     ' Message Loop
