@@ -30,7 +30,6 @@ Type FormattedLine
 End Type
 
 Enum ButtonEvent
-    BtnNone
     BtnUp
     BtnDown
     BtnPgUp
@@ -39,8 +38,9 @@ Enum ButtonEvent
     BtnRight
     BtnSelect
     BtnBack
-    BtnMouseClick
+    BtnMouseDown
     BtnKeyTyped
+    BtnNone
 End Enum
 
 Type GUI_State
@@ -51,8 +51,9 @@ End Type
 Type SuperMenuWidget
     Index As Integer
     As Integer X, Y, W, H, TopLine
-    As ULong BackCol = RGB(255, 255, 255), BoarderCol = RGB(128, 128, 128), SelBoxCol = RGB(200, 64, 64)
-    As Integer Sel, Selected, MouseHov = -1, PrvMouseBtn = 0, ShowSelected = 0, Horizontal = 0, Enabled = -1, ParentIdx = -1
+    As ULong BackCol = RGB(255, 255, 255), BoarderCol = RGB(128, 128, 128), ScrollCol = RGB(180, 180, 180)
+    As ULong HovCol = RGB(240, 240, 0), SelBoxCol = RGB(200, 64, 64)
+    As Integer Sel, Selected, MouseHov = -2, PrvMouseBtn = 0, ShowSelected = 0, Horizontal = 0, Enabled = -1, ParentIdx = -1
     TextStyles(Any) As TextFormat
     OptionText(Any) As FormattedLine
     

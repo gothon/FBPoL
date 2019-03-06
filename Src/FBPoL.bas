@@ -262,30 +262,6 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
     glDisable GL_ALPHA_TEST
     glDisable GL_DEPTH_TEST
     
-    ' Render Game Text
-    glDisable GL_LIGHTING
-    glDisable GL_DEPTH_TEST
-    SetupGl2D RI.Bounds.W, RI.Bounds.H
-    glMatrixMode GL_MODELVIEW
-    glLoadIdentity
-    glBindTexture GL_TEXTURE_2D, RI.GfxFont
-    glEnable GL_TEXTURE_2D
-    
-    For I As Integer = 0 To UBound(UI.Menu)
-        UI.Menu(I).Render
-    Next I
-    
-    'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
-    'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
-    
-    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
-    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 80, 10, 1
-    
-    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
-    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 80, 30, 1
-    
-    glDisable GL_TEXTURE_2D
-    
     '' Render the Tile Texture
     'glDisable GL_LIGHTING
     'glMatrixMode GL_MODELVIEW
@@ -370,9 +346,187 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
         If RI.Wind2 <> NULL Then SDL_GL_SwapWindow RI.Wind2: SDL_GL_MakeCurrent RI.Wind, RI.GlContext
     End Scope
     
+    ' Render Game Text
+    glDisable GL_LIGHTING
+    glDisable GL_DEPTH_TEST
+    SetupGl2D RI.Bounds.W, RI.Bounds.H
+    glMatrixMode GL_MODELVIEW
+    glLoadIdentity
+    glBindTexture GL_TEXTURE_2D, RI.GfxFont
+    glEnable GL_TEXTURE_2D
+    
+    For I As Integer = 0 To UBound(UI.Menu)
+        UI.Menu(I).Render
+    Next I
+    
+    'DrawTextGL "FB Programs of Legend", 101, 101, 2, RGB(0, 0, 0)
+    'DrawTextGL "FB Programs of Legend", 100, 100, 2, RGB(255, 255, 255)
+    
+    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 79, 11, 1, RGB(0, 0, 0)
+    DrawTextGL " VFPS: " & UI.VFPS, RI.Bounds.W - 80, 10, 1
+    
+    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 79, 31, 1, RGB(0, 0, 0)
+    DrawTextGL " SFPS: " & UI.SFPS, RI.Bounds.W - 80, 30, 1
+    
+    glDisable GL_TEXTURE_2D
+    
     VoxSetVolume RI.VolSprite(0) 'Animate Cursor on Back of Player Sprite
     VoxSetColor IIf(WS.Tick \ 30 Mod 2 = 0, 0, RGB(180,180,180))
     VoxLine Vec3I(3, 14, 12), Vec3I(5, 14, 12)
+End Sub
+
+Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
+    Dim BtnEvt As ButtonEvent
+    Dim As Integer PrvBtnState, BtnState
+    Do
+        Render RI, WS, UI
+        
+        'Translate State Vector into a Falling Edge Event Trigger
+        PrvBtnState XOr= BtnState
+        PrvBtnState And= BtnState
+        For BtnEvt = BtnUp To BtnNone - 1
+            If PrvBtnState = 1 Shl BtnEvt Then Exit For
+        Next BtnEvt
+        
+        For I As Integer = 0 To UBound(UI.Menu)
+            If BtnEvt = BtnMouseDown Then 'Change Focus if click inside rectangle
+                Var X = UI.GUIS.MX - UI.Menu(I).X
+                Var Y = UI.GUIS.MY - UI.Menu(I).Y
+                If X >= 0 And Y >= 0 And X <= UI.Menu(I).W And Y <= UI.Menu(I).H Then UI.GUIS.FocusIndex = I
+            End If
+            If I = UI.GUIS.FocusIndex Then 'Send Event to Widget
+                UI.Menu(I).DoInput BtnEvt, UI.GUIS
+               Else
+                UI.Menu(I).DoInput BtnNone, UI.GUIS
+            End If
+        Next I
+        PrvBtnState = BtnState
+        BtnState = 0
+        
+        Dim Event As SDL_Event
+        Do While SDL_PollEvent(@Event) <> 0
+            Select Case Event.Type
+            Case SDL_KEYDOWN
+                If Event.Key.KeySym.Sym = SDLK_BACKQUOTE And (Event.Key.KeySym.Mod_ And KMOD_ALT) <> 0 Then
+                    Select Case RI.MonitorNum  'Change Display Mode
+                    Case -2
+                        RI.MonitorNum = -1
+                        RI.Bounds = Type(100, 100, 640, 480)
+                    Case -1
+                        Select Case RI.Bounds.H
+                        Case 480: RI.Bounds = Type(100, 100, 800, 600)
+                        Case 600: RI.Bounds = Type(100, 100, 1024, 768)
+                        Case 768: RI.Bounds = Type(100, 100, 1600, 1024)
+                        'Case 1024: RI.Bounds = Type(100, 100, 1920, 1080)
+                        Case Else: RI.MonitorNum = 0
+                        End Select
+                    Case Else
+                        RI.MonitorNum += 1
+                        If RI.MonitorNum >= SDL_GetNumVideoDisplays Then RI.MonitorNum = -2
+                        If SDL_GetNumVideoDisplays = 1 Then
+                            RI.MonitorNum = -1
+                            RI.Bounds = Type(100, 100, 640, 480)
+                        End If
+                    End Select
+                    
+                    SetWindowMode RI
+                End If
+                
+                Var K = SDL_Keycode_to_InKeyStr(Event.Key.KeySym.Sym, Event.Key.KeySym.Mod_)
+                UI.GUIS.InK = K 'Send Input to Widgets
+                
+                Select Case Event.Key.KeySym.Sym
+                Case SDLK_UP: BtnState Or= 1 Shl BtnUp
+                Case SDLK_DOWN: BtnState Or= 1 Shl BtnDown
+                Case SDLK_PAGEUP: BtnState Or= 1 Shl BtnPgUp
+                Case SDLK_PAGEDOWN: BtnState Or= 1 Shl BtnPgDown
+                Case SDLK_LEFT: BtnState Or= 1 Shl BtnLeft
+                Case SDLK_RIGHT: BtnState Or= 1 Shl BtnRight
+                Case SDLK_KP_ENTER: BtnState Or= 1 Shl BtnSelect
+                Case SDLK_DELETE, SDLK_ESCAPE: BtnState Or= 1 Shl BtnBack
+                Case Else: BtnState Or= 1 Shl BtnKeyTyped
+                End Select
+                
+            Case SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN, SDL_MOUSEBUTTONUP
+                Dim As ULong MB, MX, MY
+                MB = SDL_GetMouseState(@MX, @MY)
+                UI.GUIS.MX = MX
+                UI.GUIS.MY = MY
+                UI.GUIS.MB = 0
+                If MB And SDL_BUTTON_LMASK Then UI.GUIS.MB Or= 1
+                If MB And SDL_BUTTON_RMASK Then UI.GUIS.MB Or= 2
+                If MB And SDL_BUTTON_MMASK Then UI.GUIS.MB Or= 4
+            Case SDL_MOUSEWHEEL
+                UI.GUIS.MS += Event.Wheel.Y
+            Case SDL_WINDOWEVENT
+                Select Case Event.window.event
+                'Case SDL_WINDOWEVENT_MOVED
+                'Case SDL_WINDOWEVENT_RESIZED
+                Case SDL_WINDOWEVENT_CLOSE
+                    If Event.window.windowID = SDL_GetWindowID(RI.Wind) Then
+                        Event.type = SDL_QUIT_
+                        SDL_PushEvent @Event
+                    End If
+                End Select
+            Case SDL_CONTROLLERDEVICEADDED
+                ConsolePrint "Controller Device Added " & Event.cdevice.which
+                Var TmpPad = SDL_GameControllerOpen(Event.cdevice.which)
+                For I As Integer = 0 To UBound(UI.GamePad)
+                    If UI.GamePad(I) = NULL Then UI.GamePad(I) = TmpPad: TmpPad = NULL: Exit For
+                Next I
+                If TmpPad <> NULL Then
+                    ReDim Preserve UI.GamePad(UBound(UI.GamePad) + 1)
+                    UI.GamePad(UBound(UI.GamePad)) = TmpPad
+                End If
+            Case SDL_CONTROLLERDEVICEREMOVED
+                ConsolePrint "Controller Device Removed " & Event.cdevice.which ' Useless Value
+                For I As Integer = 0 To UBound(UI.GamePad)
+                    If SDL_GameControllerGetAttached(UI.GamePad(I)) = SDL_FALSE Then
+                        SDL_GameControllerClose UI.GamePad(I)
+                        UI.GamePad(I) = NULL
+                    End If
+                Next I
+            End Select
+            If DoBasicEvents(Event) Then Exit Do, Do
+        Loop
+        
+        If UI.GUIS.MB And 3 Then BtnState Or= 1 Shl BtnMouseDown
+        'Map GamePad data
+        For I As Integer = 0 To UBound(UI.GamePad)
+            If UI.GamePad(I) <> NULL AndAlso SDL_GameControllerGetAttached(UI.GamePad(I)) Then
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_A) Then BtnState Or= 1 Shl BtnSelect
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_B) Then BtnState Or= 1 Shl BtnBack
+                'If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_X) Then .Btn Or= 4 'Page Up/Down Modifier
+                'If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_Y) Then 'Tab
+                
+                'If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_BACK) Then .Btn Or= &H40
+                
+                Select Case SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_LEFTX)
+                Case Is > 3 * 2 ^ 13: BtnState Or= 1 Shl BtnLeft
+                Case Is < -3 * 2 ^ 13: BtnState Or= 1 Shl BtnRight
+                End Select
+                Select Case SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_LEFTY)
+                Case Is > 3 * 2 ^ 13
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_X) Then
+                        BtnState Or= 1 Shl BtnPgDown
+                       Else
+                        BtnState Or= 1 Shl BtnDown
+                    End If
+                Case Is < -3 * 2 ^ 13
+                    If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_X) Then
+                        BtnState Or= 1 Shl BtnPgUp
+                       Else
+                        BtnState Or= 1 Shl BtnUp
+                    End If
+                End Select
+                
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_DOWN) Then BtnState Or= 1 Shl BtnDown
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_UP) Then BtnState Or= 1 Shl BtnUp
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_RIGHT) Then BtnState Or= 1 Shl BtnRight
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_LEFT) Then BtnState Or= 1 Shl BtnLeft
+            End If
+        Next I
+    Loop
 End Sub
 
 ' >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -560,6 +714,12 @@ Scope
         UI.Menu(1).OptionText(I) = LineFromCode(I + 1, LenLineNums, *CodeLine)
     Next I
     
+    For I As Integer = 0 To UBound(UI.Menu)
+        UI.Menu(I).Index = I
+    Next I
+    
+    MenuLoop RI, WS, UI
+    
     ' Message Loop
     Do
         If FrameHist(TI).FrameT > SDL_GetTicks Then RollOverCount += 1 '49 Day RollOver
@@ -628,29 +788,29 @@ Scope
                 'If Event.Key.KeySym.Sym = SDLK_LALT Or Event.Key.KeySym.Sym = SDLK_RALT Then
                 'End If
                 
-                Case SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN
-                    Dim As Integer W, H, R, WndX, WndY
-                    Dim As Long MX, MY, MB
-                    R = ImageInfo(WS.RunProgIO(0).ScreenImg, W, H)
-                    If R <> 0 Then W = 320: H = 200
-                    If RI.Wind2 = NULL Then
-                        WndX = RI.Bounds.W - W
-                        WndY = RI.Bounds.H - H
-                    End If
-                    
-                    MB = SDL_GetMouseState(@MX, @MY)
-                    If MX >= WndX And MY >= WndY Then
-                        WS.RunProgIO(0).MouseX = MX - WndX
-                        WS.RunProgIO(0).MouseY = MY - WndY
-                       Else
-                        WS.RunProgIO(0).MouseX = -1
-                        WS.RunProgIO(0).MouseY = -1
-                    End If
-                    WS.RunProgIO(0).MouseButtons = 0
-                    If MB And SDL_BUTTON_LMASK Then WS.RunProgIO(0).MouseButtons Or= 1
-                    If MB And SDL_BUTTON_RMASK Then WS.RunProgIO(0).MouseButtons Or= 2
-                    If MB And SDL_BUTTON_MMASK Then WS.RunProgIO(0).MouseButtons Or= 4
-                    
+            Case SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN, SDL_MOUSEBUTTONUP
+                Dim As Integer W, H, R, WndX, WndY
+                Dim As Long MX, MY, MB
+                R = ImageInfo(WS.RunProgIO(0).ScreenImg, W, H)
+                If R <> 0 Then W = 320: H = 200
+                If RI.Wind2 = NULL Then
+                    WndX = RI.Bounds.W - W
+                    WndY = RI.Bounds.H - H
+                End If
+                
+                MB = SDL_GetMouseState(@MX, @MY)
+                If MX >= WndX And MY >= WndY Then
+                    WS.RunProgIO(0).MouseX = MX - WndX
+                    WS.RunProgIO(0).MouseY = MY - WndY
+                   Else
+                    WS.RunProgIO(0).MouseX = -1
+                    WS.RunProgIO(0).MouseY = -1
+                End If
+                WS.RunProgIO(0).MouseButtons = 0
+                If MB And SDL_BUTTON_LMASK Then WS.RunProgIO(0).MouseButtons Or= 1
+                If MB And SDL_BUTTON_RMASK Then WS.RunProgIO(0).MouseButtons Or= 2
+                If MB And SDL_BUTTON_MMASK Then WS.RunProgIO(0).MouseButtons Or= 4
+                
             Case SDL_MOUSEWHEEL
                 WS.RunProgIO(0).MouseWheel += Event.Wheel.Y
                 

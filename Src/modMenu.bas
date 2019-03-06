@@ -36,37 +36,50 @@ Sub SuperMenuWidget.Render
     glDisable GL_BLEND
     glColor4ub ULng_2_UBx3(BoarderCol), 255
     DrawRect 0, 0, W - 1, H - 1
-    If 9 * UBound(OptionText) + 10 > H Then
+    If 9 * UBound(OptionText) + 10 > H Then 'Draw Scrollbar
+        Var ScTop = H * TopLine \ (UBound(OptionText) + 1)
+        Var ScBottom = H * (TopLine + H \ 9) \ (UBound(OptionText) + 1)
+        glColor4ub ULng_2_UBx3(ScrollCol), 255
+        If MouseHov = -1 Then glColor4ub ULng_2_UBx3(HovCol), 255
+        DrawSolidRect W - 8, ScTop, W - 1, ScBottom
+        glColor4ub ULng_2_UBx3(BoarderCol), 255
+        DrawRect W - 8, ScTop, W - 1, ScBottom - 1
         DrawRect W - 8, 0, W - 1, H - 1
-        DrawSolidRect W - 8, H * TopLine \ (UBound(OptionText) + 1), W - 1, H * (TopLine + H \ 9) \ (UBound(OptionText) + 1)
     End If
     glEnable GL_TEXTURE_2D
-    
-    Var T = (SDL_GetTicks \ 500) Mod 2 'Blink Time
     For I As Integer = TopLine To UBound(OptionText)
-        If 9 * I + 10 > H Then Exit For
+        Var Y = 9 * (I - TopLine)
+        If Y + 10 > H Then Exit For
         
         Var Txt = @OptionText(I).Text
+        
+        If I = MouseHov Then
+            glDisable GL_TEXTURE_2D
+            glColor4ub ULng_2_UBx3(HovCol), 255
+            DrawSolidRect 0, Y, 8 * Len(*Txt) + 1, Y + 10
+            glEnable GL_TEXTURE_2D
+        End If
         
         Var P = 0
         For J As Integer = 0 To UBound(OptionText(I).SR)
             Var Col = RGB(0, 0, 0)
             If OptionText(I).SR(J).StyleIdx <= UBound(TextStyles) Then Col = TextStyles(OptionText(I).SR(J).StyleIdx).Col
-            DrawTextGL Mid(*Txt, P + 1, OptionText(I).SR(J).RunLen), 8 * P + 2, 9 * I + 2, 1, BackCol
-            DrawTextGL Mid(*Txt, P + 1, OptionText(I).SR(J).RunLen), 8 * P + 1, 9 * I + 1, 1, Col
+            If I <> MouseHov Then DrawTextGL Mid(*Txt, P + 1, OptionText(I).SR(J).RunLen), 8 * P + 2, Y + 2, 1, BackCol
+            DrawTextGL Mid(*Txt, P + 1, OptionText(I).SR(J).RunLen), 8 * P + 1, Y + 1, 1, Col
             P += OptionText(I).SR(J).RunLen
         Next J
-        DrawTextGL Mid(*Txt, P + 1, Len(*Txt) - P), 8 * P + 2, 9 * I + 2, 1, BackCol
-        DrawTextGL Mid(*Txt, P + 1, Len(*Txt) - P), 8 * P + 1, 9 * I + 1, 1, RGB(0, 0, 0)
-        
-        If Sel = I Then
-            glDisable GL_TEXTURE_2D
-            Var Col = IIf(T, SelBoxCol, Not SelBoxCol)
-            glColor4ub ULng_2_UBx3(Col), 255
-            DrawRect 0, 9 * I, 8 * Len(*Txt), 9 * I + 9
-            glEnable GL_TEXTURE_2D
-        End If
+        If I <> MouseHov Then DrawTextGL Mid(*Txt, P + 1, Len(*Txt) - P), 8 * P + 2, Y + 2, 1, BackCol
+        DrawTextGL Mid(*Txt, P + 1, Len(*Txt) - P), 8 * P + 1, Y + 1, 1, RGB(0, 0, 0)
     Next I
+    
+    If Sel >= TopLine And 9 * (Sel - TopLine) + 10 <= H Then
+        glDisable GL_TEXTURE_2D
+        Var T = (SDL_GetTicks \ 500) Mod 2 'Blink Time
+        Var Col = IIf(T, SelBoxCol, Not SelBoxCol)
+        glColor4ub ULng_2_UBx3(Col), 255
+        DrawRect 0, 9 * (Sel - TopLine), 8 * Len(OptionText(Sel).Text), 9 * (Sel - TopLine) + 9
+        glEnable GL_TEXTURE_2D
+    End If
     
     glPopMatrix
 End Sub
@@ -82,22 +95,54 @@ End Sub
 
 Sub SuperMenuWidget.DoInput(BtnEvt As ButtonEvent, GUIS As GUI_State)
     Select Case BtnEvt
-    Case BtnNone
     Case BtnUp
+        Sel -= 1
+        If Sel < 0 Then Sel = 0
+        If Sel < TopLine Then TopLine -= 1
     Case BtnDown
         Sel += 1
+        If Sel > UBound(OptionText) Then Sel = UBound(OptionText)
+        If 9 * (Sel - TopLine) + 10 > H Then TopLine += 1
     Case BtnPgUp
+        Sel -= H \ 9
+        TopLine -= H \ 9
+        If Sel < 0 Then Sel = 0
+        If TopLine < 0 Then TopLine = 0
     Case BtnPgDown
+        Sel += H \ 9
+        TopLine += H \ 9
+        If Sel > UBound(OptionText) Then Sel = UBound(OptionText)
+        If TopLine > UBound(OptionText) - H \ 9 + 1 Then TopLine = UBound(OptionText) - H \ 9 + 1
+        If TopLine < 0 Then TopLine = 0
     Case BtnLeft
     Case BtnRight
     Case BtnSelect
     Case BtnBack
-    Case BtnMouseClick
+    Case BtnMouseDown
+        If MouseHov >= 0 Then Sel = MouseHov
     Case BtnKeyTyped
         Select Case GUIS.InK
         Case Else
         End Select
+    Case BtnNone
     End Select
+    
+    MouseHov = -2
+    Var MX = GUIS.MX - X
+    Var MY = GUIS.MY - Y
+    If MX >= 0 Then
+        For I As Integer = TopLine To UBound(OptionText)
+            If 9 * (I - TopLine) + 10 > H Then Exit For
+            
+            If MX <= 8 * Len(OptionText(I).Text) + 1 And MY >= 9 * (I - TopLine) And MY <= 9 * (I - TopLine) + 10 Then MouseHov = I
+        Next I
+    End If
+    If 9 * UBound(OptionText) + 10 > H Then 'Hit Test Scrollbar
+        Var ScTop = H * TopLine \ (UBound(OptionText) + 1)
+        Var ScBottom = H * (TopLine + H \ 9) \ (UBound(OptionText) + 1)
+        
+        If MX >= W - 8 And MX <= W - 1 And MY >= ScTop And MY <= ScBottom - 1 Then MouseHov = -1
+    End If
 End Sub
 
 Sub StyleFromExpr(L As FormattedLine, ByRef StartPos As Integer, Expr As BASIC_Expression, CodeLine As BASIC_LineOfCodeAst)
