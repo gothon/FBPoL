@@ -376,8 +376,9 @@ Sub Render(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
 End Sub
 
 Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
-    Dim BtnEvt As ButtonEvent
-    Dim As Integer PrvBtnState, BtnState
+    Dim As ButtonEvent PrvBtnEvt, BtnEvt
+    Dim As Integer PrvBtnState, BtnState, PrvBtnY, BtnY
+    Dim As LongInt LastEventTime
     Do
         Render RI, WS, UI
         
@@ -387,6 +388,10 @@ Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
         For BtnEvt = BtnUp To BtnNone - 1
             If PrvBtnState = 1 Shl BtnEvt Then Exit For
         Next BtnEvt
+        
+        If BtnState = 0 Then PrvBtnEvt = BtnNone 'Button Repeat
+        If BtnEvt <> BtnNone Then PrvBtnEvt = BtnEvt: LastEventTime = SDL_GetTicks
+        If PrvBtnEvt <> BtnNone And (SDL_GetTicks - LastEventTime) > 300 Then BtnEvt = PrvBtnEvt: LastEventTime = SDL_GetTicks - 270
         
         For I As Integer = 0 To UBound(UI.Menu)
             If BtnEvt = BtnMouseDown Then 'Change Focus if click inside rectangle
@@ -444,6 +449,7 @@ Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
                 Case SDLK_RIGHT: BtnState Or= 1 Shl BtnRight
                 Case SDLK_KP_ENTER: BtnState Or= 1 Shl BtnSelect
                 Case SDLK_DELETE, SDLK_ESCAPE: BtnState Or= 1 Shl BtnBack
+                Case SDLK_TAB: UI.GUIS.FocusIndex = (UI.GUIS.FocusIndex + 1) Mod (UBound(UI.Menu) + 1)
                 Case Else: BtnState Or= 1 Shl BtnKeyTyped
                 End Select
                 
@@ -457,7 +463,8 @@ Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
                 If MB And SDL_BUTTON_RMASK Then UI.GUIS.MB Or= 2
                 If MB And SDL_BUTTON_MMASK Then UI.GUIS.MB Or= 4
             Case SDL_MOUSEWHEEL
-                UI.GUIS.MS += Event.Wheel.Y
+                UI.GUIS.MS = Event.Wheel.Y
+                BtnState Or= 1 Shl BtnMouseRoll
             Case SDL_WINDOWEVENT
                 Select Case Event.window.event
                 'Case SDL_WINDOWEVENT_MOVED
@@ -492,14 +499,13 @@ Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
         
         If UI.GUIS.MB And 3 Then BtnState Or= 1 Shl BtnMouseDown
         'Map GamePad data
+        BtnY = 0
         For I As Integer = 0 To UBound(UI.GamePad)
             If UI.GamePad(I) <> NULL AndAlso SDL_GameControllerGetAttached(UI.GamePad(I)) Then
                 If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_A) Then BtnState Or= 1 Shl BtnSelect
                 If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_B) Then BtnState Or= 1 Shl BtnBack
-                'If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_X) Then .Btn Or= 4 'Page Up/Down Modifier
-                'If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_Y) Then 'Tab
-                
-                'If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_BACK) Then .Btn Or= &H40
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_BACK) Then BtnState Or= 1 Shl BtnBack
+                If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_Y) Then BtnY = 1
                 
                 Select Case SDL_GameControllerGetAxis(UI.GamePad(I), SDL_CONTROLLER_AXIS_LEFTX)
                 Case Is > 3 * 2 ^ 13: BtnState Or= 1 Shl BtnLeft
@@ -526,6 +532,8 @@ Sub MenuLoop(RI As RenderInfo, WS As WorldState, UI As UserInterfaceState)
                 If SDL_GameControllerGetButton(UI.GamePad(I), SDL_CONTROLLER_BUTTON_DPAD_LEFT) Then BtnState Or= 1 Shl BtnLeft
             End If
         Next I
+        If PrvBtnY = 0 And BtnY = 1 Then UI.GUIS.FocusIndex = (UI.GUIS.FocusIndex + 1) Mod (UBound(UI.Menu) + 1) 'Tab
+        PrvBtnY = BtnY
     Loop
 End Sub
 

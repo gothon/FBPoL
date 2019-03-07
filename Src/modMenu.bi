@@ -39,6 +39,7 @@ Enum ButtonEvent
     BtnSelect
     BtnBack
     BtnMouseDown
+    BtnMouseRoll
     BtnKeyTyped
     BtnNone
 End Enum

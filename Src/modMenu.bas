@@ -34,19 +34,6 @@ Sub SuperMenuWidget.Render
     glColor4ub ULng_2_UBx3(BackCol), 220
     DrawSolidRect 0, 0, W, H
     glDisable GL_BLEND
-    glColor4ub ULng_2_UBx3(BoarderCol), 255
-    DrawRect 0, 0, W - 1, H - 1
-    If 9 * UBound(OptionText) + 10 > H Then 'Draw Scrollbar
-        Var ScTop = H * TopLine \ (UBound(OptionText) + 1)
-        Var ScBottom = H * (TopLine + H \ 9) \ (UBound(OptionText) + 1)
-        glColor4ub ULng_2_UBx3(ScrollCol), 255
-        If MouseHov = -1 Then glColor4ub ULng_2_UBx3(HovCol), 255
-        DrawSolidRect W - 8, ScTop, W - 1, ScBottom
-        glColor4ub ULng_2_UBx3(BoarderCol), 255
-        DrawRect W - 8, 0, W - 1, H - 1
-        If Mode = 1 Then glColor4ub ULng_2_UBx3(SelBoxCol), 255
-        DrawRect W - 8, ScTop, W - 1, ScBottom - 1
-    End If
     glEnable GL_TEXTURE_2D
     For I As Integer = TopLine To UBound(OptionText)
         Var Y = 9 * (I - TopLine)
@@ -73,6 +60,21 @@ Sub SuperMenuWidget.Render
         DrawTextGL Mid(*Txt, P + 1, Len(*Txt) - P), 8 * P + 1, Y + 1, 1, RGB(0, 0, 0)
     Next I
     
+    glDisable GL_TEXTURE_2D 'Draw Boarder
+    glColor4ub ULng_2_UBx3(BoarderCol), 255
+    DrawRect 0, 0, W - 1, H - 1
+    If 9 * UBound(OptionText) + 10 > H Then 'Draw Scrollbar
+        Var ScTop = H * TopLine \ (UBound(OptionText) + 1)
+        Var ScBottom = H * (TopLine + H \ 9) \ (UBound(OptionText) + 1)
+        glColor4ub ULng_2_UBx3(ScrollCol), 255
+        If MouseHov = -1 Then glColor4ub ULng_2_UBx3(HovCol), 255
+        DrawSolidRect W - 8, ScTop, W - 1, ScBottom
+        glColor4ub ULng_2_UBx3(BoarderCol), 255
+        DrawRect W - 8, 0, W - 1, H - 1
+        If Mode = 1 Then glColor4ub ULng_2_UBx3(SelBoxCol), 255
+        DrawRect W - 8, ScTop, W - 1, ScBottom - 1
+    End If
+    
     If Sel >= TopLine And 9 * (Sel - TopLine) + 10 <= H Then
         Var InvCol = (Not SelBoxCol) 'Flash Time
         Var T = (Sin((SDL_GetTicks Mod 800) * 8 * Atn(1) / 800) + 1) / 2
@@ -81,11 +83,10 @@ Sub SuperMenuWidget.Render
         Var G = T * ((SelBoxCol Shr 8) And 255) + (1 - T) * ((InvCol Shr 8) And 255)
         Var B = T * (SelBoxCol And 255) + (1 - T) * (InvCol And 255)
         
-        glDisable GL_TEXTURE_2D
-        glColor4ub R, G, B, 255
+        glColor4ub R, G, B, 255 'Draw SelBox
         DrawRect 0, 9 * (Sel - TopLine), 8 * Len(OptionText(Sel).Text), 9 * (Sel - TopLine) + 9
-        glEnable GL_TEXTURE_2D
     End If
+    glEnable GL_TEXTURE_2D
     
     glPopMatrix
 End Sub
@@ -129,6 +130,10 @@ Sub SuperMenuWidget.DoInput(BtnEvt As ButtonEvent, GUIS As GUI_State)
     Case BtnMouseDown
         If MouseHov >= 0 Then Sel = MouseHov
         If MouseHov = -1 Then Mode = 1: pMY = GUIS.MY - Y
+    Case BtnMouseRoll
+        TopLine -= GUIS.MS * 3
+        If TopLine > UBound(OptionText) - H \ 9 + 1 Then TopLine = UBound(OptionText) - H \ 9 + 1
+        If TopLine < 0 Then TopLine = 0
     Case BtnKeyTyped
         Select Case GUIS.InK
         Case Else
